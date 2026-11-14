@@ -12,7 +12,7 @@ export const App: React.FC = () => {
           <AppRouter />
         </main>
         <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500">
-          CloudShare &copy; {new Date().getFullYear()} &mdash; Phase 2B Backend Foundation
+          CloudShare &copy; {new Date().getFullYear()} &mdash; Phase 3 Authentication Foundation
         </footer>
       </div>
     </AppProviders>
