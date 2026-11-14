@@ -6,12 +6,17 @@ import {
   Archive,
   File,
   Info,
+  Download,
+  Trash2,
 } from 'lucide-react';
 import type { FileItem, FileCategory } from '@/features/files/types';
 
 export interface FileRowProps {
   file: FileItem;
   onSelect: (file: FileItem) => void;
+  onDownload?: (file: FileItem) => void;
+  onDelete?: (file: FileItem) => void;
+  isDownloading?: boolean;
 }
 
 const CategoryIcon: React.FC<{ category: FileCategory }> = ({ category }) => {
@@ -39,7 +44,13 @@ const categoryBadgeStyles: Record<FileCategory, string> = {
   other: 'bg-slate-100 text-slate-600 border-slate-200',
 };
 
-export const FileRow: React.FC<FileRowProps> = ({ file, onSelect }) => {
+export const FileRow: React.FC<FileRowProps> = ({
+  file,
+  onSelect,
+  onDownload,
+  onDelete,
+  isDownloading = false,
+}) => {
   const formattedDate = new Date(file.createdAt).toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'short',
@@ -76,14 +87,45 @@ export const FileRow: React.FC<FileRowProps> = ({ file, onSelect }) => {
         </div>
       </div>
 
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-2 shrink-0">
         <span
-          className={`hidden sm:inline-flex capitalize rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${
+          className={`hidden md:inline-flex capitalize rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${
             categoryBadgeStyles[file.category]
           }`}
         >
           {file.category}
         </span>
+
+        {onDownload && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDownload(file);
+            }}
+            disabled={isDownloading}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-sky-50 hover:text-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-500"
+            title="Download file"
+            aria-label={`Download ${file.fileName}`}
+          >
+            <Download className="h-4 w-4" />
+          </button>
+        )}
+
+        {onDelete && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(file);
+            }}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500"
+            title="Delete file"
+            aria-label={`Delete ${file.fileName}`}
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
 
         <button
           type="button"
@@ -91,7 +133,7 @@ export const FileRow: React.FC<FileRowProps> = ({ file, onSelect }) => {
             e.stopPropagation();
             onSelect(file);
           }}
-          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none"
+          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-400"
           title="Inspect file metadata"
           aria-label={`Inspect metadata for ${file.fileName}`}
         >

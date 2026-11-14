@@ -252,3 +252,160 @@ export function deriveIsolatedFileState<T extends { ownerId?: string }>(
     isOwnerMatch: true,
   };
 }
+
+// ==============================================================================
+// Phase 5: File Upload & Storage Management Utilities
+// ==============================================================================
+
+export const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB (52,428,800 bytes)
+
+export const DISALLOWED_EXTENSIONS = new Set([
+  'exe', 'bat', 'cmd', 'sh', 'vbs', 'msi', 'dll', 'com', 'scr', 'cpl', 'jar',
+]);
+
+export interface UploadValidationResult {
+  isValid: boolean;
+  error: string | null;
+}
+
+export interface FileUploadResult {
+  file: FileItem | null;
+  error: string | null;
+}
+
+export interface FileDownloadResult {
+  blob: Blob | null;
+  downloadUrl?: string;
+  error: string | null;
+}
+
+export interface FileOperationResult {
+  success: boolean;
+  isPartial?: boolean;
+  warning?: string | null;
+  error: string | null;
+}
+
+/**
+ * Sanitizes a filename by stripping path traversal tokens, null bytes,
+ * invalid OS characters, and bounding length while preserving extension.
+ */
+export function sanitizeFileName(fileName: string): string {
+  if (!fileName || typeof fileName !== 'string') {
+    return 'unnamed_file';
+  }
+  // Strip null bytes and control characters via char codes to satisfy strict linting
+  let clean = '';
+  for (let i = 0; i < fileName.length; i++) {
+    const code = fileName.charCodeAt(i);
+    if (code >= 32 && code !== 127) {
+      clean += fileName[i];
+    }
+  }
+  // Strip leading path traversal patterns (e.g. ../ or ..\ or ./)
+  clean = clean.trim().replace(/^(?:(?:\.|\.\.)[/\\])+/, '');
+  // Strip path traversal sequences and illegal filename characters
+  clean = clean.replace(/[/\\:*?"<>|]/g, '_');
+  // Strip consecutive dots and leading/trailing dots/whitespace
+  clean = clean.replace(/\.{2,}/g, '.').trim().replace(/^\.+|\.+$/g, '');
+  // Max length safeguard (200 characters) preserving extension
+  if (clean.length > 200) {
+    const extIndex = clean.lastIndexOf('.');
+    if (extIndex !== -1 && clean.length - extIndex <= 15) {
+      const ext = clean.substring(extIndex);
+      clean = clean.substring(0, 200 - ext.length) + ext;
+    } else {
+      clean = clean.substring(0, 200);
+    }
+  }
+  return clean || 'unnamed_file';
+}
+
+/**
+ * Generates an isolated, collision-resistant storage path for a user file:
+ * {userId}/{fileId}/{sanitizedFileName}
+ */
+export function generateStoragePath(userId: string, fileId: string, fileName: string): string {
+  const safeName = sanitizeFileName(fileName);
+  return `${userId}/${fileId}/${safeName}`;
+}
+
+/**
+ * Validates a file before initiating an upload:
+ * Checks non-empty existence, positive size, 50MB max limit, and disallowed extensions.
+ */
+export function validateFileForUpload(
+  file: { name?: string; size?: number; type?: string } | null | undefined
+): UploadValidationResult {
+  if (!file) {
+    return { isValid: false, error: 'No file selected for upload.' };
+  }
+
+  const name = (file.name || '').trim();
+  if (!name) {
+    return { isValid: false, error: 'File name cannot be empty.' };
+  }
+
+  if (typeof file.size !== 'number' || file.size <= 0) {
+    return { isValid: false, error: 'Cannot upload empty (0 byte) files.' };
+  }
+
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    return {
+      isValid: false,
+      error: `File size exceeds the 50 MB limit (current size: ${formatByteSize(file.size)}).`,
+    };
+  }
+
+  const ext = name.split('.').pop()?.toLowerCase() || '';
+  if (DISALLOWED_EXTENSIONS.has(ext)) {
+    return {
+      isValid: false,
+      error: `Files with extension '.${ext}' are not allowed for security reasons.`,
+    };
+  }
+
+  return { isValid: true, error: null };
+}
+
+/**
+ * Sanitizes Supabase Storage errors for end-user display without exposing
+ * internal bucket details, S3 URLs, or sensitive configuration data.
+ */
+export function sanitizeStorageError(
+  error: { message?: string; statusCode?: string | number } | string | null | undefined
+): string {
+  if (!error) return 'An unexpected storage error occurred.';
+  const msg = typeof error === 'string' ? error.toLowerCase() : (error.message || '').toLowerCase();
+  const status = typeof error === 'object' && error !== null ? String(error.statusCode || '') : '';
+
+  if (status === '404' || msg.includes('not found') || msg.includes('object not found')) {
+    return 'File object not found in storage.';
+  }
+
+  if (
+    status === '403' ||
+    msg.includes('unauthorized') ||
+    msg.includes('permission denied') ||
+    msg.includes('access denied') ||
+    msg.includes('row-level security')
+  ) {
+    return 'Access denied: You do not have permission to access this storage object.';
+  }
+
+  if (
+    status === '413' ||
+    msg.includes('too large') ||
+    msg.includes('payload too large') ||
+    msg.includes('exceeded') ||
+    msg.includes('entity too large')
+  ) {
+    return 'File exceeds the maximum allowed storage upload limit of 50 MB.';
+  }
+
+  if (msg.includes('network') || msg.includes('failed to fetch') || msg.includes('timeout')) {
+    return 'Storage network connection failed. Please check your internet connection.';
+  }
+
+  return 'Storage operation failed. Please try again.';
+}

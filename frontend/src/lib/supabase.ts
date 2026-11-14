@@ -1,8 +1,8 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || '';
+const supabaseAnonKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || '';
 
 /**
  * Validates whether live Supabase credentials are configured in the environment
@@ -23,7 +23,7 @@ let supabaseClientInstance: SupabaseClient<Database> | null = null;
  */
 export const getSupabaseClient = (): SupabaseClient<Database> => {
   if (!supabaseClientInstance) {
-    if (!isSupabaseConfigured && import.meta.env.DEV) {
+    if (!isSupabaseConfigured && typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
       console.warn(
         '[CloudShare] Supabase credentials are unconfigured or using template placeholders. ' +
         'Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.'

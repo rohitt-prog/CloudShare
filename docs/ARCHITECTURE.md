@@ -23,10 +23,10 @@
 | **PostgreSQL Database Tables (`profiles`, `files`, `share_links`)** | **Implemented in Migration (Deployment Pending)** | Phase 2B |
 | **Database Triggers (`on_auth_user_created`, `handle_updated_at`)** | **Implemented in Migration (Deployment Pending)** | Phase 2B |
 | **Row Level Security (RLS) Policies** | **Implemented in Migration (Deployment Pending)** | Phase 2B |
-| **Private Supabase Storage Bucket (`user-files`) & Storage RLS** | *Planned (Not Deployed)* | Phase 2B / Phase 5 |
+| **Private Supabase Storage Bucket (`user-files`) & Storage RLS** | **Implemented in Migration (Deployment Pending)** | Phase 5 |
 | **Authentication Flow & Session Management (`features/auth`)** | **Implemented** | Phase 3 |
 | **File Management & Dashboard (`features/files`)** | **Implemented** | Phase 4 |
-| **File Upload & Storage Operations (`features/files`)** | *Planned* | Phase 5 |
+| **File Upload, Download & Storage Operations (`features/files`)** | **Implemented** | Phase 5 |
 | **Edge Function Runtime Logic (Token validation & Signed URLs)** | *Planned (Not Deployed)* | Phase 6 |
 
 ---
@@ -145,7 +145,8 @@ CloudVault/
     │
     └── tests/                      # Frontend unit test suites
         ├── auth-validation.test.js # Authentication validation tests
-        └── file-management.test.js # File dashboard filtering and isolation tests
+        ├── file-management.test.js # File dashboard filtering and isolation tests
+        └── file-operations.test.js # File upload validation, storage path, sanitization, and workflow tests
 ```
 
 ### 2.1 Supabase CLI Invocation
@@ -187,13 +188,30 @@ supabase --workdir backend functions serve
 - **Client Role:** Will manage login, registration, password recovery forms, and authentication state (`useAuth` hook). Will store session securely in browser local storage via the SDK.
 - **Database Hook:** An automated PostgreSQL trigger (`on_auth_user_created`) will provision a matching record in the public `profiles` table whenever a new user registers in `auth.users`.
 
-### 4.2 File Storage Responsibility (Planned: Phase 2B / Phase 5)
+### 4.2 File Storage Responsibility (Implemented in Migration — Deployment Pending)
 - **Storage Engine:** Supabase Storage (S3-compatible object storage).
-- **Bucket Configuration:** Single private bucket named `user-files` with public access disabled (`public = false`).
-- **Access Control:** Storage policies will enforce that:
-  - Users can only upload objects into a path prefixed with their own UUID: `{user_id}/{file_id}/{filename}`.
-  - Users can only read, update, or delete objects within their own directory prefix.
-  - Direct anonymous HTTP access to storage buckets will be completely blocked.
+- **Migration File:** `backend/supabase/migrations/20261114213000_create_storage_bucket.sql`.
+- **Bucket Configuration:** Single private bucket named `user-files` with public access disabled (`public = false`) and maximum file size enforced at `52,428,800` bytes (50 MB).
+- **Storage Path Convention:** Collision-resistant path pattern:
+  `{user_id}/{file_id}/{sanitized_filename}`
+  - `{user_id}`: Owner's UUID (verified via `auth.uid()`).
+  - `{file_id}`: Client-generated UUIDv4 preventing collisions across identical file names.
+  - `{sanitized_filename}`: Sanitized file name with path traversal patterns (`../`), null bytes, and illegal characters stripped.
+- **Storage RLS Policies on `storage.objects`:**
+  - **SELECT:** `(storage.foldername(name))[1] = (SELECT auth.uid()::text)`
+  - **INSERT:** `(storage.foldername(name))[1] = (SELECT auth.uid()::text)`
+  - **UPDATE:** `(storage.foldername(name))[1] = (SELECT auth.uid()::text)`
+  - **DELETE:** `(storage.foldername(name))[1] = (SELECT auth.uid()::text)`
+  Direct unauthenticated access to storage buckets is completely blocked.
+- **File Lifecycle & Compensation Workflow:**
+  1. **Pre-upload Validation:** Client validates file existence, non-zero size, 50 MB upper limit, and blocks dangerous executable extensions (`.exe`, `.bat`, `.cmd`, `.sh`, `.ps1`, `.vbs`, `.msi`, `.jar`, `.com`, `.scr`).
+  2. **Session Verification:** Authenticated user identity is resolved at service boundary via `supabase.auth.getUser()`.
+  3. **Storage Upload:** Uploaded to private bucket `user-files` at `{user_id}/{file_id}/{sanitized_filename}`.
+  4. **Database Metadata Insertion:** File metadata recorded in `public.files` (governed by PostgreSQL RLS).
+  5. **Atomic Compensation on Partial Failure:** If database insertion fails after storage upload succeeds, the client service automatically purges the orphaned blob from `user-files` via `supabase.storage.from('user-files').remove([storagePath])`.
+  6. **Download Workflow:** Initiates authenticated download via `supabase.storage.from('user-files').download(storagePath)`, receives a `Blob`, creates a temporary browser object URL, and triggers an anchor download.
+  7. **Delete Workflow:** Accessible confirmation dialog confirms intent, database record is deleted first from `public.files`, followed by storage object removal from `user-files`.
+- **Deployment Status:** **Pending Deployment.** The migration has been authored and validated in the repository, but remote Supabase execution is deferred pending production deployment approval.
 
 ### 4.3 Secure Sharing Responsibility (Planned: Phase 6)
 - **Challenge:** Enabling an unauthenticated or guest recipient to view or download a specific private file without granting them direct access to the owner's private storage bucket.

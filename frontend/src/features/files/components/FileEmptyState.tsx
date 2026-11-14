@@ -1,17 +1,19 @@
 import React from 'react';
-import { FileQuestion, FolderOpen, RefreshCw } from 'lucide-react';
+import { FileQuestion, FolderOpen, RefreshCw, UploadCloud } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 export interface FileEmptyStateProps {
   isFiltered: boolean;
   onResetFilters?: () => void;
   onRefresh?: () => void;
+  onUploadClick?: () => void;
 }
 
 export const FileEmptyState: React.FC<FileEmptyStateProps> = ({
   isFiltered,
   onResetFilters,
   onRefresh,
+  onUploadClick,
 }) => {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white/60 p-12 text-center">
@@ -30,13 +32,19 @@ export const FileEmptyState: React.FC<FileEmptyStateProps> = ({
       <p className="max-w-sm text-xs text-slate-500 mb-6 leading-relaxed">
         {isFiltered
           ? 'Try adjusting your search keywords or switching category filters to find what you are looking for.'
-          : 'No file metadata records have been registered yet. Once file upload is enabled in Phase 5, uploaded files will appear here.'}
+          : 'No files have been uploaded to your private vault yet. Select or drop a file above to upload.'}
       </p>
 
       <div className="flex items-center gap-2">
         {isFiltered && onResetFilters && (
           <Button variant="outline" size="sm" onClick={onResetFilters}>
             Reset filters
+          </Button>
+        )}
+        {!isFiltered && onUploadClick && (
+          <Button variant="primary" size="sm" onClick={onUploadClick} className="gap-1.5">
+            <UploadCloud className="h-3.5 w-3.5" />
+            <span>Upload File</span>
           </Button>
         )}
         {onRefresh && (

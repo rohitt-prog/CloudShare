@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { fileService } from '@/features/files/services/file.service';
+import { fileService, triggerBrowserDownload } from '@/features/files/services/file.service';
 import type {
   FileItem,
   FileCategory,
@@ -22,6 +22,18 @@ export function useFiles() {
   const [isTableMissing, setIsTableMissing] = useState<boolean>(false);
   const [reloadTrigger, setReloadTrigger] = useState<number>(0);
 
+  // Operation states
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteWarning, setDeleteWarning] = useState<string | null>(null);
+
   // Filter and Sort states
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [category, setCategory] = useState<FileCategory>('all');
@@ -33,6 +45,17 @@ export function useFiles() {
 
   const refetch = useCallback(() => {
     setReloadTrigger((prev) => prev + 1);
+  }, []);
+
+  const clearUploadError = useCallback(() => {
+    setUploadError(null);
+  }, []);
+
+  const clearOperationErrors = useCallback(() => {
+    setUploadError(null);
+    setDownloadError(null);
+    setDeleteError(null);
+    setDeleteWarning(null);
   }, []);
 
   useEffect(() => {
@@ -47,6 +70,10 @@ export function useFiles() {
       setIsLoading(false);
       setError(null);
       setIsTableMissing(false);
+      setUploadError(null);
+      setDownloadError(null);
+      setDeleteError(null);
+      setDeleteWarning(null);
       return;
     }
 
@@ -57,6 +84,10 @@ export function useFiles() {
     setIsLoading(true);
     setError(null);
     setIsTableMissing(false);
+    setUploadError(null);
+    setDownloadError(null);
+    setDeleteError(null);
+    setDeleteWarning(null);
 
     const executeFetch = async () => {
       try {
@@ -178,6 +209,134 @@ export function useFiles() {
       });
   }, [visibleFiles, searchQuery, category, sort]);
 
+  /**
+   * Uploads a file with truthful status tracking and refreshes the vault on success.
+   */
+  const uploadFile = useCallback(
+    async (file: File): Promise<{ success: boolean; file: FileItem | null; error: string | null }> => {
+      if (!user) {
+        const errMsg = 'You must be signed in to upload files.';
+        setUploadError(errMsg);
+        return { success: false, file: null, error: errMsg };
+      }
+
+      setIsUploading(true);
+      setUploadStatus(`Uploading ${file.name} (${formatByteSize(file.size)})...`);
+      setUploadError(null);
+
+      try {
+        const result = await fileService.uploadFile(file, user.id);
+
+        if (result.error || !result.file) {
+          setUploadError(result.error || 'Failed to upload file.');
+          return { success: false, file: null, error: result.error };
+        }
+
+        // Auto-refresh the file list
+        refetch();
+        return { success: true, file: result.file, error: null };
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : 'An unexpected error occurred during upload.';
+        setUploadError(errMsg);
+        return { success: false, file: null, error: errMsg };
+      } finally {
+        setIsUploading(false);
+        setUploadStatus(null);
+      }
+    },
+    [user, refetch]
+  );
+
+  /**
+   * Downloads a private file from storage and triggers browser file save.
+   */
+  const downloadFile = useCallback(
+    async (file: FileItem): Promise<{ success: boolean; error: string | null }> => {
+      if (!user) {
+        const errMsg = 'You must be signed in to download files.';
+        setDownloadError(errMsg);
+        return { success: false, error: errMsg };
+      }
+
+      setIsDownloading(true);
+      setDownloadError(null);
+
+      try {
+        const result = await fileService.downloadFile(file, user.id);
+
+        if (result.error || !result.blob) {
+          setDownloadError(result.error || 'Failed to download file.');
+          return { success: false, error: result.error };
+        }
+
+        // Trigger native browser download
+        triggerBrowserDownload(result.blob, file.fileName);
+        return { success: true, error: null };
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : 'An unexpected error occurred during download.';
+        setDownloadError(errMsg);
+        return { success: false, error: errMsg };
+      } finally {
+        setIsDownloading(false);
+      }
+    },
+    [user]
+  );
+
+  /**
+   * Deletes a file from database and storage, and purges selection.
+   * Accurately distinguishes between complete success and partial deletion failure.
+   */
+  const deleteFile = useCallback(
+    async (
+      file: FileItem
+    ): Promise<{
+      success: boolean;
+      isPartial?: boolean;
+      warning?: string | null;
+      error: string | null;
+    }> => {
+      if (!user) {
+        const errMsg = 'You must be signed in to delete files.';
+        setDeleteError(errMsg);
+        return { success: false, isPartial: false, warning: null, error: errMsg };
+      }
+
+      setIsDeleting(true);
+      setDeleteError(null);
+      setDeleteWarning(null);
+
+      try {
+        const result = await fileService.deleteFile(file, user.id);
+
+        if (!result.success || result.error) {
+          setDeleteError(result.error || 'Failed to delete file.');
+          return { success: false, isPartial: false, warning: null, error: result.error };
+        }
+
+        if (result.isPartial && result.warning) {
+          setDeleteWarning(result.warning);
+        }
+
+        // Purge selection if currently selected file was deleted
+        if (selectedFile?.id === file.id) {
+          setSelectedFile(null);
+        }
+
+        // Auto-refresh the file list
+        refetch();
+        return result;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : 'An unexpected error occurred during deletion.';
+        setDeleteError(errMsg);
+        return { success: false, isPartial: false, warning: null, error: errMsg };
+      } finally {
+        setIsDeleting(false);
+      }
+    },
+    [user, selectedFile, refetch]
+  );
+
   // If the loaded data does not match the current user, effective loading is true
   const effectiveLoading = Boolean(user) && (!isOwnerMatch || isLoading);
 
@@ -197,5 +356,25 @@ export function useFiles() {
     selectedFile: visibleSelectedFile,
     setSelectedFile,
     refetch,
+
+    // Upload capabilities
+    uploadFile,
+    isUploading,
+    uploadStatus,
+    uploadError,
+    clearUploadError,
+
+    // Download capabilities
+    downloadFile,
+    isDownloading,
+    downloadError,
+
+    // Delete capabilities
+    deleteFile,
+    isDeleting,
+    deleteError,
+    deleteWarning,
+
+    clearOperationErrors,
   };
 }

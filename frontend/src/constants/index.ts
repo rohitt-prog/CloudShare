@@ -5,13 +5,15 @@
 export const APP_NAME = 'CloudShare';
 export const APP_REPO_NAME = 'CloudVault';
 export const APP_VERSION = '0.1.0';
-export const CURRENT_PHASE = 'Phase 4: File Management Foundation';
+export const CURRENT_PHASE = 'Phase 5: Cloud File Management';
 
 export const SUPABASE_CONFIG = {
-  url: import.meta.env.VITE_SUPABASE_URL || '',
-  anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+  url: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || '',
+  anonKey: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || '',
   isConfigured: Boolean(
-    import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY
+    typeof import.meta !== 'undefined' &&
+    import.meta.env?.VITE_SUPABASE_URL &&
+    import.meta.env?.VITE_SUPABASE_ANON_KEY
   ),
 };
 

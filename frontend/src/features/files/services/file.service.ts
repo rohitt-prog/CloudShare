@@ -1,12 +1,23 @@
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import type { FileItem } from '@/features/files/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database, FileRow } from '../../../types/database.ts';
+import { supabase as defaultSupabase, isSupabaseConfigured as defaultIsSupabaseConfigured } from '../../../lib/supabase.ts';
+import { STORAGE_BUCKETS } from '../../../constants/index.ts';
+import type {
+  FileItem,
+  FileUploadResult,
+  FileDownloadResult,
+  FileOperationResult,
+} from '../types.ts';
 import {
   mapDatabaseFileToFileItem,
   formatByteSize,
+  determineFileCategory,
   isMissingTableError,
   sanitizeDatabaseError,
-} from '@/features/files/types';
-import type { FileRow } from '@/types/database';
+  sanitizeStorageError,
+  validateFileForUpload,
+  generateStoragePath,
+} from '../types.ts';
 
 export interface FileListResult {
   files: FileItem[];
@@ -90,22 +101,26 @@ export const PREVIEW_DEMO_FILES: FileItem[] = [
  * Validates authenticated user session inside the service boundary.
  * Never trusts unauthenticated or arbitrary caller-supplied owner IDs.
  */
-async function resolveAuthenticatedUser(expectedOwnerId?: string): Promise<{
+async function resolveAuthenticatedUser(
+  client: SupabaseClient<Database>,
+  isConfigured: boolean,
+  expectedOwnerId?: string
+): Promise<{
   userId: string | null;
   error: string | null;
 }> {
   // If Supabase credentials are not configured, allow local preview mode
-  if (!isSupabaseConfigured) {
+  if (!isConfigured) {
     return { userId: expectedOwnerId || 'demo-user', error: null };
   }
 
   try {
-    const { data, error } = await supabase.auth.getUser();
+    const { data, error } = await client.auth.getUser();
 
-    if (error || !data.user) {
+    if (error || !data?.user) {
       return {
         userId: null,
-        error: 'Authentication required. Please sign in to view your files.',
+        error: 'Authentication required. Please sign in to perform this operation.',
       };
     }
 
@@ -115,7 +130,7 @@ async function resolveAuthenticatedUser(expectedOwnerId?: string): Promise<{
     if (expectedOwnerId && expectedOwnerId !== authenticatedId) {
       return {
         userId: null,
-        error: 'Access denied: You cannot view files belonging to another user account.',
+        error: 'Access denied: You cannot access resources belonging to another user account.',
       };
     }
 
@@ -129,135 +144,433 @@ async function resolveAuthenticatedUser(expectedOwnerId?: string): Promise<{
 }
 
 /**
- * File Metadata Service
- * Enforces authenticated identity verification and strictly scopes queries to the authenticated user.
- * Note: Client-side filtering is an extra query filter; PostgreSQL Row Level Security (RLS)
- * remains the true security boundary enforcing access control once migrations are deployed.
+ * Triggers a browser download for a retrieved file Blob.
  */
-export const fileService = {
-  /**
-   * Retrieves all file metadata records owned by the authenticated user.
-   * If caller passes ownerId, it is validated against the authenticated user and rejected on mismatch.
-   */
-  async listFiles(ownerId?: string): Promise<FileListResult> {
-    // 1. If Supabase is unconfigured, return demo files
-    if (!isSupabaseConfigured) {
-      return {
-        files: PREVIEW_DEMO_FILES,
-        error: null,
-        isTableMissing: true,
-      };
-    }
+export function triggerBrowserDownload(blob: Blob, fileName: string): void {
+  if (typeof window === 'undefined') return;
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+}
 
-    // 2. Validate authenticated user at the service boundary
-    const auth = await resolveAuthenticatedUser(ownerId);
-    if (auth.error || !auth.userId) {
-      return {
-        files: [],
-        error: auth.error || 'User is not authenticated.',
-      };
-    }
-
-    const authenticatedUserId = auth.userId;
-
-    // 3. Query files using genuine authenticated user ID
-    try {
-      const { data, error } = await supabase
-        .from('files')
-        .select('*')
-        .eq('owner_id', authenticatedUserId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        // Only fall back to demo mode if the table is confirmed missing from the database
-        if (isMissingTableError(error)) {
-          return {
-            files: PREVIEW_DEMO_FILES,
-            error: null,
-            isTableMissing: true,
-          };
-        }
-
-        // Real permission, authentication, or database errors are sanitized and reported
-        return {
-          files: [],
-          error: sanitizeDatabaseError(error),
-        };
+/**
+ * Factory for creating a File Metadata & Storage Service.
+ * Allows injecting a client for unit testing while defaulting to the singleton Supabase client.
+ */
+export function createFileService(
+  client: SupabaseClient<Database> = defaultSupabase,
+  isConfigured: boolean = defaultIsSupabaseConfigured
+) {
+  return {
+    /**
+     * Uploads a file to Supabase Storage and records its metadata in public.files.
+     * Handles compensation cleanup if database insertion fails after storage upload.
+     */
+    async uploadFile(file: File, ownerId?: string): Promise<FileUploadResult> {
+      // 1. Client-side file validation
+      const validation = validateFileForUpload(file);
+      if (!validation.isValid) {
+        return { file: null, error: validation.error };
       }
 
-      const files = ((data as FileRow[]) || []).map(mapDatabaseFileToFileItem);
-      return { files, error: null, isTableMissing: false };
-    } catch {
-      // Network failures, CORS rejections, or client errors are NEVER converted to demo mode
-      return {
-        files: [],
-        error: 'Network connection failure. Please check your internet connection and try again.',
-      };
-    }
-  },
+      // 2. Validate authenticated user at the service boundary
+      const auth = await resolveAuthenticatedUser(client, isConfigured, ownerId);
+      if (auth.error || !auth.userId) {
+        return { file: null, error: auth.error || 'Authentication required to upload files.' };
+      }
 
-  /**
-   * Retrieves an individual file's metadata record owned by the authenticated user.
-   * Validates authenticated identity and never replaces real database errors with demo records.
-   */
-  async getFileById(fileId: string, ownerId?: string): Promise<FileDetailsResult> {
-    if (!fileId) {
-      return { file: null, error: 'File ID is required.' };
-    }
+      const authenticatedUserId = auth.userId;
 
-    // 1. If Supabase is unconfigured, demo mode is genuinely active
-    if (!isSupabaseConfigured) {
-      const demoFile = PREVIEW_DEMO_FILES.find((f) => f.id === fileId) || null;
-      return {
-        file: demoFile,
-        error: demoFile ? null : 'File not found in demo vault.',
-      };
-    }
+      // 3. If Supabase is unconfigured, register in preview vault
+      if (!isConfigured) {
+        const demoId = `demo-${Date.now()}`;
+        const newDemoFile: FileItem = {
+          id: demoId,
+          fileName: file.name,
+          storagePath: `demo/${file.name}`,
+          fileSize: file.size,
+          mimeType: file.type || 'application/octet-stream',
+          ownerId: authenticatedUserId,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          category: determineFileCategory(file.type || null, file.name),
+          formattedSize: formatByteSize(file.size),
+        };
+        PREVIEW_DEMO_FILES.unshift(newDemoFile);
+        return { file: newDemoFile, error: null };
+      }
 
-    // 2. Validate authenticated user at the service boundary
-    const auth = await resolveAuthenticatedUser(ownerId);
-    if (auth.error || !auth.userId) {
-      return {
-        file: null,
-        error: auth.error || 'User is not authenticated.',
-      };
-    }
+      // 4. Generate collision-resistant unique file identifier and isolated path
+      const fileId = crypto.randomUUID();
+      const storagePath = generateStoragePath(authenticatedUserId, fileId, file.name);
 
-    const authenticatedUserId = auth.userId;
+      // 5. Upload object to Supabase Storage private bucket
+      try {
+        const { error: uploadError } = await client.storage
+          .from(STORAGE_BUCKETS.FILES)
+          .upload(storagePath, file, {
+            cacheControl: '3600',
+            upsert: false,
+            contentType: file.type || 'application/octet-stream',
+          });
 
-    // 3. Query file metadata scoped to authenticated user ID
-    try {
-      const { data, error } = await supabase
-        .from('files')
-        .select('*')
-        .eq('id', fileId)
-        .eq('owner_id', authenticatedUserId)
-        .single();
-
-      if (error) {
-        // Only return demo data if the table is confirmed missing from the database
-        if (isMissingTableError(error)) {
-          const demoFile = PREVIEW_DEMO_FILES.find((f) => f.id === fileId) || null;
-          return {
-            file: demoFile,
-            error: demoFile ? null : 'File not found in demo vault.',
-          };
+        if (uploadError) {
+          return { file: null, error: sanitizeStorageError(uploadError) };
         }
 
-        // Real database errors (including 404, 403, 500) must NEVER be replaced with demo records
+        // 6. Persist metadata record in public.files table
+        const { data: dbData, error: dbError } = await client
+          .from('files')
+          .insert({
+            id: fileId,
+            owner_id: authenticatedUserId,
+            file_name: file.name,
+            storage_path: storagePath,
+            file_size: file.size,
+            mime_type: file.type || 'application/octet-stream',
+          })
+          .select()
+          .single();
+
+        if (dbError) {
+          // COMPENSATION: Storage upload succeeded but database insertion failed.
+          // Clean up the orphaned storage object to maintain consistency.
+          try {
+            const { error: cleanupError } = await client.storage
+              .from(STORAGE_BUCKETS.FILES)
+              .remove([storagePath]);
+
+            if (cleanupError) {
+              console.warn(
+                '[CloudShare] Cleanup of orphaned storage object failed:',
+                sanitizeStorageError(cleanupError)
+              );
+            }
+          } catch (cleanupErr) {
+            console.warn('[CloudShare] Cleanup of orphaned storage object encountered exception:', cleanupErr);
+          }
+          return { file: null, error: sanitizeDatabaseError(dbError) };
+        }
+
+        return {
+          file: mapDatabaseFileToFileItem(dbData as FileRow),
+          error: null,
+        };
+      } catch {
         return {
           file: null,
-          error: sanitizeDatabaseError(error),
+          error: 'Network connection failure during upload. Please check your internet connection.',
+        };
+      }
+    },
+
+    /**
+     * Retrieves all file metadata records owned by the authenticated user.
+     * If caller passes ownerId, it is validated against the authenticated user and rejected on mismatch.
+     */
+    async listFiles(ownerId?: string): Promise<FileListResult> {
+      // 1. If Supabase is unconfigured, return demo files
+      if (!isConfigured) {
+        return {
+          files: PREVIEW_DEMO_FILES,
+          error: null,
+          isTableMissing: true,
         };
       }
 
-      return { file: mapDatabaseFileToFileItem(data as FileRow), error: null };
-    } catch {
-      // Runtime or network errors must be surfaced accurately with safe sanitized messages
-      return {
-        file: null,
-        error: 'Network connection failure. Please check your internet connection and try again.',
-      };
-    }
-  },
-};
+      // 2. Validate authenticated user at the service boundary
+      const auth = await resolveAuthenticatedUser(client, isConfigured, ownerId);
+      if (auth.error || !auth.userId) {
+        return {
+          files: [],
+          error: auth.error || 'User is not authenticated.',
+        };
+      }
+
+      const authenticatedUserId = auth.userId;
+
+      // 3. Query files using genuine authenticated user ID
+      try {
+        const { data, error } = await client
+          .from('files')
+          .select('*')
+          .eq('owner_id', authenticatedUserId)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          // Only fall back to demo mode if the table is confirmed missing from the database
+          if (isMissingTableError(error)) {
+            return {
+              files: PREVIEW_DEMO_FILES,
+              error: null,
+              isTableMissing: true,
+            };
+          }
+
+          // Real permission, authentication, or database errors are sanitized and reported
+          return {
+            files: [],
+            error: sanitizeDatabaseError(error),
+          };
+        }
+
+        const files = ((data as FileRow[]) || []).map(mapDatabaseFileToFileItem);
+        return { files, error: null, isTableMissing: false };
+      } catch {
+        // Network failures, CORS rejections, or client errors are NEVER converted to demo mode
+        return {
+          files: [],
+          error: 'Network connection failure. Please check your internet connection and try again.',
+        };
+      }
+    },
+
+    /**
+     * Retrieves an individual file's metadata record owned by the authenticated user.
+     * Validates authenticated identity and never replaces real database errors with demo records.
+     */
+    async getFileById(fileId: string, ownerId?: string): Promise<FileDetailsResult> {
+      if (!fileId) {
+        return { file: null, error: 'File ID is required.' };
+      }
+
+      // 1. If Supabase is unconfigured, demo mode is genuinely active
+      if (!isConfigured) {
+        const demoFile = PREVIEW_DEMO_FILES.find((f) => f.id === fileId) || null;
+        return {
+          file: demoFile,
+          error: demoFile ? null : 'File not found in demo vault.',
+        };
+      }
+
+      // 2. Validate authenticated user at the service boundary
+      const auth = await resolveAuthenticatedUser(client, isConfigured, ownerId);
+      if (auth.error || !auth.userId) {
+        return {
+          file: null,
+          error: auth.error || 'User is not authenticated.',
+        };
+      }
+
+      const authenticatedUserId = auth.userId;
+
+      // 3. Query file metadata scoped to authenticated user ID
+      try {
+        const { data, error } = await client
+          .from('files')
+          .select('*')
+          .eq('id', fileId)
+          .eq('owner_id', authenticatedUserId)
+          .single();
+
+        if (error) {
+          // Only return demo data if the table is confirmed missing from the database
+          if (isMissingTableError(error)) {
+            const demoFile = PREVIEW_DEMO_FILES.find((f) => f.id === fileId) || null;
+            return {
+              file: demoFile,
+              error: demoFile ? null : 'File not found in demo vault.',
+            };
+          }
+
+          // Real database errors (including 404, 403, 500) must NEVER be replaced with demo records
+          return {
+            file: null,
+            error: sanitizeDatabaseError(error),
+          };
+        }
+
+        return { file: mapDatabaseFileToFileItem(data as FileRow), error: null };
+      } catch {
+        // Runtime or network errors must be surfaced accurately with safe sanitized messages
+        return {
+          file: null,
+          error: 'Network connection failure. Please check your internet connection and try again.',
+        };
+      }
+    },
+
+    /**
+     * Downloads a private file directly from Supabase Storage for the authenticated owner.
+     * Never generates or exposes public URLs for private files.
+     */
+    async downloadFile(file: FileItem, ownerId?: string): Promise<FileDownloadResult> {
+      if (!file || !file.storagePath) {
+        return { blob: null, error: 'File information is missing.' };
+      }
+
+      // 1. Validate authenticated user at the service boundary
+      const auth = await resolveAuthenticatedUser(client, isConfigured, ownerId);
+      if (auth.error || !auth.userId) {
+        return { blob: null, error: auth.error || 'Authentication required to download files.' };
+      }
+
+      const authenticatedUserId = auth.userId;
+
+      // Reject cross-user download attempts based on ownerId
+      if (file.ownerId !== authenticatedUserId && file.ownerId !== 'demo-user') {
+        return { blob: null, error: 'Access denied: You do not have permission to download this file.' };
+      }
+
+      // Defense-in-depth: Verify storagePath starts with exact prefix `${authenticatedUserId}/`
+      if (authenticatedUserId !== 'demo-user') {
+        const expectedPrefix = `${authenticatedUserId}/`;
+        if (!file.storagePath || !file.storagePath.startsWith(expectedPrefix)) {
+          return {
+            blob: null,
+            error: 'Access denied: You do not have permission to download this file.',
+          };
+        }
+      }
+
+      // 2. If Supabase is unconfigured, generate local preview blob
+      if (!isConfigured) {
+        const demoContent = `CloudShare Preview File Content\nFilename: ${file.fileName}\nSize: ${file.formattedSize}\nCategory: ${file.category}\nOwner: ${file.ownerId}\nStorage: ${file.storagePath}\n`;
+        const blob = new Blob([demoContent], { type: file.mimeType || 'text/plain' });
+        return { blob, error: null };
+      }
+
+      // 3. Download object from Supabase Storage private bucket
+      try {
+        const { data, error: downloadError } = await client.storage
+          .from(STORAGE_BUCKETS.FILES)
+          .download(file.storagePath);
+
+        if (downloadError) {
+          return { blob: null, error: sanitizeStorageError(downloadError) };
+        }
+
+        if (!data) {
+          return { blob: null, error: 'File content could not be retrieved from storage.' };
+        }
+
+        return { blob: data, error: null };
+      } catch {
+        return {
+          blob: null,
+          error: 'Network connection failure during download. Please check your internet connection.',
+        };
+      }
+    },
+
+    /**
+     * Deletes a file's metadata record from the database and removes its object from storage.
+     * Reports partial success if metadata is deleted but storage object deletion cannot be confirmed.
+     */
+    async deleteFile(file: FileItem, ownerId?: string): Promise<FileOperationResult> {
+      if (!file || !file.id || !file.storagePath) {
+        return { success: false, isPartial: false, warning: null, error: 'File information is missing.' };
+      }
+
+      // 1. Validate authenticated user at the service boundary
+      const auth = await resolveAuthenticatedUser(client, isConfigured, ownerId);
+      if (auth.error || !auth.userId) {
+        return {
+          success: false,
+          isPartial: false,
+          warning: null,
+          error: auth.error || 'Authentication required to delete files.',
+        };
+      }
+
+      const authenticatedUserId = auth.userId;
+
+      // Reject cross-user deletion attempts
+      if (file.ownerId !== authenticatedUserId && file.ownerId !== 'demo-user') {
+        return {
+          success: false,
+          isPartial: false,
+          warning: null,
+          error: 'Access denied: You do not have permission to delete this file.',
+        };
+      }
+
+      // Defense-in-depth: Verify storagePath starts with exact prefix `${authenticatedUserId}/`
+      if (authenticatedUserId !== 'demo-user') {
+        const expectedPrefix = `${authenticatedUserId}/`;
+        if (!file.storagePath || !file.storagePath.startsWith(expectedPrefix)) {
+          return {
+            success: false,
+            isPartial: false,
+            warning: null,
+            error: 'Access denied: You do not have permission to delete this file.',
+          };
+        }
+      }
+
+      // 2. If Supabase is unconfigured, remove from preview array
+      if (!isConfigured) {
+        const idx = PREVIEW_DEMO_FILES.findIndex((f) => f.id === file.id);
+        if (idx !== -1) {
+          PREVIEW_DEMO_FILES.splice(idx, 1);
+        }
+        return { success: true, isPartial: false, warning: null, error: null };
+      }
+
+      // 3. Delete metadata record from database first
+      try {
+        const { error: dbDeleteError } = await client
+          .from('files')
+          .delete()
+          .eq('id', file.id)
+          .eq('owner_id', authenticatedUserId);
+
+        if (dbDeleteError) {
+          return {
+            success: false,
+            isPartial: false,
+            warning: null,
+            error: sanitizeDatabaseError(dbDeleteError),
+          };
+        }
+
+        // 4. Delete object from Supabase Storage private bucket
+        try {
+          const { error: storageDeleteError } = await client.storage
+            .from(STORAGE_BUCKETS.FILES)
+            .remove([file.storagePath]);
+
+          if (storageDeleteError) {
+            console.warn(
+              '[CloudShare] Storage cleanup failed for deleted file:',
+              sanitizeStorageError(storageDeleteError)
+            );
+            return {
+              success: true,
+              isPartial: true,
+              warning: 'File metadata was removed from your vault, but storage object deletion could not be confirmed.',
+              error: null,
+            };
+          }
+        } catch (storageErr) {
+          console.warn('[CloudShare] Storage removal network exception:', storageErr);
+          return {
+            success: true,
+            isPartial: true,
+            warning: 'File metadata was removed from your vault, but storage object deletion could not be confirmed due to a network error.',
+            error: null,
+          };
+        }
+
+        return { success: true, isPartial: false, warning: null, error: null };
+      } catch {
+        return {
+          success: false,
+          isPartial: false,
+          warning: null,
+          error: 'Network connection failure during deletion. Please check your internet connection.',
+        };
+      }
+    },
+  };
+}
+
+/**
+ * Singleton production file service instance
+ */
+export const fileService = createFileService();

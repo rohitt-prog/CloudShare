@@ -1,14 +1,23 @@
 import React, { useEffect, useRef } from 'react';
-import { X, FileText, Calendar, HardDrive, Shield, Key, Folder } from 'lucide-react';
+import { X, FileText, Calendar, HardDrive, Shield, Key, Folder, Download, Trash2 } from 'lucide-react';
 import type { FileItem } from '@/features/files/types';
 import { Button } from '@/components/ui/Button';
 
 export interface FileDetailsProps {
   file: FileItem | null;
   onClose: () => void;
+  onDownload?: (file: FileItem) => void;
+  onDelete?: (file: FileItem) => void;
+  isDownloading?: boolean;
 }
 
-export const FileDetails: React.FC<FileDetailsProps> = ({ file, onClose }) => {
+export const FileDetails: React.FC<FileDetailsProps> = ({
+  file,
+  onClose,
+  onDownload,
+  onDelete,
+  isDownloading = false,
+}) => {
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
@@ -147,7 +156,7 @@ export const FileDetails: React.FC<FileDetailsProps> = ({ file, onClose }) => {
               <span className="font-medium">Security & Storage</span>
             </div>
             <p className="font-semibold text-slate-900">Private Bucket</p>
-            <p className="text-[10px] text-slate-400">RLS Isolated</p>
+            <p className="text-[10px] text-slate-400 font-mono">RLS Path Isolated</p>
           </div>
         </div>
 
@@ -171,15 +180,46 @@ export const FileDetails: React.FC<FileDetailsProps> = ({ file, onClose }) => {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-2">
+        {/* Footer Actions */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
           <div className="flex items-center gap-1.5 text-slate-400 text-xs">
             <Key className="h-3.5 w-3.5 text-emerald-600" />
             <span>Encrypted metadata access</span>
           </div>
-          <Button variant="secondary" size="sm" onClick={onClose}>
-            Done
-          </Button>
+
+          <div className="flex items-center gap-2">
+            {onDelete && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  onDelete(file);
+                  onClose();
+                }}
+                className="gap-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Delete</span>
+              </Button>
+            )}
+
+            {onDownload && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => onDownload(file)}
+                disabled={isDownloading}
+                className="gap-1.5"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Download</span>
+              </Button>
+            )}
+
+            <Button variant="secondary" size="sm" onClick={onClose}>
+              Done
+            </Button>
+          </div>
         </div>
       </div>
     </div>
