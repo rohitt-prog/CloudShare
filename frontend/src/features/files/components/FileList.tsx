@@ -9,6 +9,7 @@ import { FileEmptyState } from './FileEmptyState';
 import { FileDetails } from './FileDetails';
 import { FileUpload } from './FileUpload';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { ShareModal } from '@/features/sharing/components/ShareModal';
 import { Button } from '@/components/ui/Button';
 import type { FileItem } from '@/features/files/types';
 
@@ -51,6 +52,7 @@ export const FileList: React.FC = () => {
   } = useFiles();
 
   const [fileToDelete, setFileToDelete] = useState<FileItem | null>(null);
+  const [fileToShare, setFileToShare] = useState<FileItem | null>(null);
 
   const handleResetFilters = () => {
     setSearchQuery('');
@@ -219,6 +221,7 @@ export const FileList: React.FC = () => {
                     onSelect={setSelectedFile}
                     onDownload={(f) => void downloadFile(f)}
                     onDelete={(f) => setFileToDelete(f)}
+                    onShare={(f) => setFileToShare(f)}
                     isDownloading={isDownloading}
                   />
                 ))}
@@ -235,9 +238,17 @@ export const FileList: React.FC = () => {
           onClose={() => setSelectedFile(null)}
           onDownload={(f) => void downloadFile(f)}
           onDelete={(f) => setFileToDelete(f)}
+          onShare={(f) => setFileToShare(f)}
           isDownloading={isDownloading}
         />
       )}
+
+      {/* Share Modal */}
+      <ShareModal
+        file={fileToShare}
+        isOpen={Boolean(fileToShare)}
+        onClose={() => setFileToShare(null)}
+      />
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal

@@ -11,6 +11,7 @@
 > - **Timestamps:** Standardized on `now()` for defaults, provisioning, and triggers.
 > - **Deployment Status:** **Pending.** Migrations have not yet been applied to a live remote Supabase instance.
 > - **Storage Bucket Migration:** `backend/supabase/migrations/20261114213000_create_storage_bucket.sql` provisions private bucket `user-files` and configures storage RLS on `storage.objects` (Deployment Pending).
+> - **Phase 6 File Sharing Integration:** Active in application code. `share_links` table stores SHA-256 token hashes (never plaintext). Direct client insertions are strictly blocked by RLS and mediated via `create-share-link` Edge Function; public guest access is mediated via `access-shared-file` Edge Function with 60-second signed storage URLs.
 
 ---
 

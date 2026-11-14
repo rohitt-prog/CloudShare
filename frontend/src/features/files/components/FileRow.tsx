@@ -8,6 +8,7 @@ import {
   Info,
   Download,
   Trash2,
+  Share2,
 } from 'lucide-react';
 import type { FileItem, FileCategory } from '@/features/files/types';
 
@@ -16,6 +17,7 @@ export interface FileRowProps {
   onSelect: (file: FileItem) => void;
   onDownload?: (file: FileItem) => void;
   onDelete?: (file: FileItem) => void;
+  onShare?: (file: FileItem) => void;
   isDownloading?: boolean;
 }
 
@@ -49,6 +51,7 @@ export const FileRow: React.FC<FileRowProps> = ({
   onSelect,
   onDownload,
   onDelete,
+  onShare,
   isDownloading = false,
 }) => {
   const formattedDate = new Date(file.createdAt).toLocaleDateString(undefined, {
@@ -95,6 +98,21 @@ export const FileRow: React.FC<FileRowProps> = ({
         >
           {file.category}
         </span>
+
+        {onShare && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onShare(file);
+            }}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-sky-50 hover:text-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-500"
+            title="Share file"
+            aria-label={`Share ${file.fileName}`}
+          >
+            <Share2 className="h-4 w-4" />
+          </button>
+        )}
 
         {onDownload && (
           <button

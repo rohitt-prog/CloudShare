@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { X, FileText, Calendar, HardDrive, Shield, Key, Folder, Download, Trash2 } from 'lucide-react';
+import { X, FileText, Calendar, HardDrive, Shield, Key, Folder, Download, Trash2, Share2 } from 'lucide-react';
 import type { FileItem } from '@/features/files/types';
 import { Button } from '@/components/ui/Button';
 
@@ -8,6 +8,7 @@ export interface FileDetailsProps {
   onClose: () => void;
   onDownload?: (file: FileItem) => void;
   onDelete?: (file: FileItem) => void;
+  onShare?: (file: FileItem) => void;
   isDownloading?: boolean;
 }
 
@@ -16,6 +17,7 @@ export const FileDetails: React.FC<FileDetailsProps> = ({
   onClose,
   onDownload,
   onDelete,
+  onShare,
   isDownloading = false,
 }) => {
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -188,6 +190,21 @@ export const FileDetails: React.FC<FileDetailsProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {onShare && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  onShare(file);
+                  onClose();
+                }}
+                className="gap-1.5 text-sky-600 hover:text-sky-700 hover:bg-sky-50 border-sky-200"
+              >
+                <Share2 className="h-3.5 w-3.5" />
+                <span>Share</span>
+              </Button>
+            )}
+
             {onDelete && (
               <Button
                 variant="outline"

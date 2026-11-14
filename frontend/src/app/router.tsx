@@ -4,22 +4,85 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { HomePage } from '@/pages/HomePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
-import { RouterContext, type AppRoute, type RouterContextValue } from '@/app/router-context';
+import { SharedFilePage } from '@/pages/SharedFilePage';
+import {
+  RouterContext,
+  type AppRoute,
+  type RouterContextValue,
+  type NavigateOptions,
+} from '@/app/router-context';
 
 export interface RouterProps {
   initialRoute?: AppRoute;
+  initialShareToken?: string | null;
 }
 
 /**
- * App Router Component with Protected Route Enforcement
+ * Extracts initial route and share token from window location if present.
  */
-export const AppRouter: React.FC<RouterProps> = ({ initialRoute = 'home' }) => {
+function getInitialRouteState(defaultRoute: AppRoute = 'home', defaultToken: string | null = null): {
+  route: AppRoute;
+  token: string | null;
+} {
+  if (typeof window !== 'undefined' && window.location?.search) {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('share');
+    if (token) {
+      return { route: 'share', token: token.trim() };
+    }
+  }
+  return { route: defaultRoute, token: defaultToken };
+}
+
+/**
+ * App Router Component with Protected Route Enforcement & Public Share Route Support
+ */
+export const AppRouter: React.FC<RouterProps> = ({
+  initialRoute = 'home',
+  initialShareToken = null,
+}) => {
   const { isAuthenticated, isLoading } = useAuth();
-  const [currentRoute, setCurrentRoute] = useState<AppRoute>(initialRoute);
+
+  const initialState = useMemo(
+    () => getInitialRouteState(initialRoute, initialShareToken),
+    [initialRoute, initialShareToken]
+  );
+
+  const [currentRoute, setCurrentRoute] = useState<AppRoute>(initialState.route);
+  const [shareToken, setShareToken] = useState<string | null>(initialState.token);
   const [intendedRoute, setIntendedRoute] = useState<AppRoute | null>(null);
 
-  const navigate = useCallback((route: AppRoute) => {
+  const navigate = useCallback((route: AppRoute, options?: NavigateOptions) => {
+    if (route !== 'share' && typeof window !== 'undefined' && window.history?.replaceState) {
+      // Clear share parameter from URL when navigating away from guest share page
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('share')) {
+        url.searchParams.delete('share');
+        window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
+      }
+    }
+
+    if (options?.shareToken !== undefined) {
+      setShareToken(options.shareToken);
+    }
     setCurrentRoute(route);
+  }, []);
+
+  // Listen for browser navigation / popstate
+  useEffect(() => {
+    const handlePopState = () => {
+      if (typeof window !== 'undefined' && window.location?.search) {
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('share');
+        if (token) {
+          setShareToken(token.trim());
+          setCurrentRoute('share');
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   // Protected route enforcement effect
@@ -27,24 +90,26 @@ export const AppRouter: React.FC<RouterProps> = ({ initialRoute = 'home' }) => {
     if (isLoading) return;
 
     const isAuthRoute = currentRoute === 'login' || currentRoute === 'register';
+    const isGuestRoute = currentRoute === 'share';
 
-    if (!isAuthenticated && !isAuthRoute) {
+    if (!isAuthenticated && !isAuthRoute && !isGuestRoute) {
       // Unauthenticated user trying to access protected route -> save intended route and redirect to login
       setIntendedRoute(currentRoute);
       setCurrentRoute('login');
     } else if (isAuthenticated && isAuthRoute) {
       // Authenticated user trying to access login/register -> redirect to intended route or home
-      const destination = intendedRoute && intendedRoute !== 'login' && intendedRoute !== 'register'
-        ? intendedRoute
-        : 'home';
+      const destination =
+        intendedRoute && intendedRoute !== 'login' && intendedRoute !== 'register'
+          ? intendedRoute
+          : 'home';
       setIntendedRoute(null);
       setCurrentRoute(destination);
     }
   }, [isAuthenticated, isLoading, currentRoute, intendedRoute]);
 
   const contextValue = useMemo<RouterContextValue>(
-    () => ({ currentRoute, navigate }),
-    [currentRoute, navigate]
+    () => ({ currentRoute, shareToken, navigate }),
+    [currentRoute, shareToken, navigate]
   );
 
   // 1. Initial loading screen while restoring Supabase session
@@ -64,6 +129,16 @@ export const AppRouter: React.FC<RouterProps> = ({ initialRoute = 'home' }) => {
   // 2. Render route content
   let pageContent: React.ReactNode;
   switch (currentRoute) {
+    case 'share':
+      pageContent = (
+        <SharedFilePage
+          token={shareToken || ''}
+          onNavigateToLogin={() => navigate('login')}
+          onNavigateToHome={() => navigate('home')}
+        />
+      );
+      break;
+
     case 'login':
       pageContent = (
         <LoginPage

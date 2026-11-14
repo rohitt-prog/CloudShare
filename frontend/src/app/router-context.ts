@@ -1,10 +1,15 @@
 import { createContext, useContext } from 'react';
 
-export type AppRoute = 'home' | 'login' | 'register' | 'dashboard';
+export type AppRoute = 'home' | 'login' | 'register' | 'dashboard' | 'share';
+
+export interface NavigateOptions {
+  shareToken?: string | null;
+}
 
 export interface RouterContextValue {
   currentRoute: AppRoute;
-  navigate: (route: AppRoute) => void;
+  shareToken: string | null;
+  navigate: (route: AppRoute, options?: NavigateOptions) => void;
 }
 
 export const RouterContext = createContext<RouterContextValue | null>(null);

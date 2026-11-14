@@ -27,7 +27,9 @@
 | **Authentication Flow & Session Management (`features/auth`)** | **Implemented** | Phase 3 |
 | **File Management & Dashboard (`features/files`)** | **Implemented** | Phase 4 |
 | **File Upload, Download & Storage Operations (`features/files`)** | **Implemented** | Phase 5 |
-| **Edge Function Runtime Logic (Token validation & Signed URLs)** | *Planned (Not Deployed)* | Phase 6 |
+| **Edge Function Runtime Logic (`create-share-link`, `access-shared-file`)** | **Implemented in Code (Deployment Pending)** | Phase 6 |
+| **Secure File Sharing UI & Service (`features/sharing`, `useShare`, `ShareModal`)** | **Implemented** | Phase 6 |
+| **Public Guest Portal & Route (`pages/SharedFilePage`, `?share=TOKEN`)** | **Implemented** | Phase 6 |
 
 ---
 
@@ -146,7 +148,8 @@ CloudVault/
     └── tests/                      # Frontend unit test suites
         ├── auth-validation.test.js # Authentication validation tests
         ├── file-management.test.js # File dashboard filtering and isolation tests
-        └── file-operations.test.js # File upload validation, storage path, sanitization, and workflow tests
+        ├── file-operations.test.js # File upload validation, storage path, sanitization, and workflow tests
+        └── sharing-operations.test.js # Token cryptography, format validation, and share service tests
 ```
 
 ### 2.1 Supabase CLI Invocation
@@ -213,13 +216,32 @@ supabase --workdir backend functions serve
   7. **Delete Workflow:** Accessible confirmation dialog confirms intent, database record is deleted first from `public.files`, followed by storage object removal from `user-files`.
 - **Deployment Status:** **Pending Deployment.** The migration has been authored and validated in the repository, but remote Supabase execution is deferred pending production deployment approval.
 
-### 4.3 Secure Sharing Responsibility (Planned: Phase 6)
-- **Challenge:** Enabling an unauthenticated or guest recipient to view or download a specific private file without granting them direct access to the owner's private storage bucket.
-- **Planned Solution — Edge Function Mediation:**
-  1. **Link Creation:** The authenticated owner will invoke the `create-share-link` Edge Function. The function will generate a high-entropy share token, calculate expiration time, optionally hash a password, and store the record in `share_links`.
-  2. **Link Access:** A guest recipient will navigate to `/share/:token` and invoke the `access-shared-file` Edge Function.
-  3. **Verification & Delivery:** The function will verify token existence, check whether `expires_at` has passed, validate download limits, check the optional password, increment `download_count`, and issue a **short-lived signed URL** (valid for 60 seconds) directly to the specific file.
-  4. The guest will download the file via the temporary signed URL without ever gaining persistent access or viewing storage folder hierarchies.
+### 4.3 Secure Sharing Responsibility (Implemented in Code — Deployment Pending)
+- **Challenge:** Enabling an unauthenticated or guest recipient to view or download a specific private file without granting them direct access to the owner's private storage bucket or compromising storage path privacy.
+- **Architectural Solution — Edge Function & Cryptographic Mediation:**
+  1. **High-Entropy Token Generation:**
+     - Generates 32 cryptographically random bytes (256 bits of entropy) using Web Crypto API.
+     - Encoded as an unpadded Base64URL string (RFC 4648 §5, exactly 43 characters).
+     - Persists only the SHA-256 cryptographic hash (64 hex characters) in `public.share_links.token_hash`.
+     - The raw token is NEVER persisted in the database and NEVER logged.
+  2. **Link Creation (`create-share-link` Edge Function):**
+     - Runs in Supabase Edge Runtime (Deno). Accepts strictly `POST` requests and handles `OPTIONS` CORS preflight.
+     - Validates caller session JWT and confirms caller ownership of the target file in `public.files`.
+     - Generates the high-entropy token, calculates expiration (1h to 720h), and inserts the row into `public.share_links` using the service-role client (as client INSERT is blocked by RLS).
+     - Returns the raw token once in the creation response to the file owner.
+  3. **Link Access & Mediation (`access-shared-file` Edge Function):**
+     - Runs in Supabase Edge Runtime (Deno). Permitted for unauthenticated guests.
+     - Enforces strict 43-character Base64URL token format validation.
+     - Computes SHA-256 hash of the incoming token to query `public.share_links` joined with `public.files`.
+     - Returns a uniform HTTP 404 response for non-existent, expired, or revoked links to prevent timing or enumeration oracles.
+     - Conceals private storage paths, owner IDs, and bucket names from guest responses.
+     - **Action `metadata`:** Returns safe public attributes (`fileName`, `fileSize`, `mimeType`, `expiresAt`).
+     - **Action `download`:** Generates a short-lived (60-second) signed URL via Supabase Storage admin API for the private `user-files` bucket.
+  4. **Frontend Integration:**
+     - **Share Modal (`ShareModal.tsx`):** Provides expiration duration selection (1h, 24h, 7d), link generation, single-display copy-to-clipboard feedback, active link listing, and revocation controls.
+     - **Guest Portal (`SharedFilePage.tsx`):** Renders public landing page for URLs formatted as `https://domain/?share=TOKEN`. Verifies metadata and enables 60-second direct download tunnel without requiring login.
+     - **Router (`AppRouter`):** Detects `?share=TOKEN`, bypasses authentication redirects for guest route, and clears URL parameters upon navigation away.
+  5. **Zero Fake Sharing Policy:** If Supabase credentials are unconfigured, sharing services return explicit configuration errors rather than fabricating fake share links.
 
 ### 4.4 Row Level Security (RLS) Boundary (Planned: Phase 2B)
 Row Level Security will serve as the primary security wall. Every table in the `public` schema (`profiles`, `files`, `share_links`) will have RLS enabled (`ALTER TABLE ... ENABLE ROW LEVEL SECURITY`).

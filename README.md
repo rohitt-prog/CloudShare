@@ -12,8 +12,8 @@ CloudShare is a secure cloud-based file-sharing web application built with React
 - **Phase 3: Authentication Implementation** *(Completed)*
 - **Phase 4: UI/UX Design System & File Dashboard** *(Completed)*
 - **Phase 5: File Upload & Storage Management** *(Completed)*
-- **Phase 6: File Sharing & Access Permissions** *(Next)*
-- **Phase 7: Security Hardening & Audit**
+- **Phase 6: File Sharing & Access Permissions** *(Completed)*
+- **Phase 7: Security Hardening & Audit** *(Next)*
 - **Phase 8: Testing, Optimization & Deployment**
 
 ---
@@ -91,7 +91,8 @@ CloudVault/
     └── tests/                      # Frontend unit test suites
         ├── auth-validation.test.js # Authentication validation tests
         ├── file-management.test.js # File categorization, formatting, isolation tests
-        └── file-operations.test.js # File upload validation, storage path, and operation workflow tests
+        ├── file-operations.test.js # File upload validation, storage path, and operation workflow tests
+        └── sharing-operations.test.js # Token cryptography, format validation, and share service tests
 ```
 
 ---
