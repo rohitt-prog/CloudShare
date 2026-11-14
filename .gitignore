@@ -16,28 +16,44 @@ pids
 *.seed
 *.pid.lock
 
-# Dependency directories
+# Dependency directories (root and nested)
 node_modules/
+**/node_modules/
 jspm_packages/
 
 # TypeScript cache
 *.tsbuildinfo
+**/*.tsbuildinfo
 
-# Build output
+# Build output (root and nested)
 dist/
+**/dist/
 dist-ssr/
+**/dist-ssr/
 build/
+**/build/
 
-# Environment files
+# Environment files and local overrides (root and nested)
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 *.env
+**/.env
+**/.env.local
+**/.env.*.local
+**/*.env
 
 # Exception: allow .env.example
 !.env.example
+!**/.env.example
+
+# Supabase local development artifacts
+backend/supabase/.temp/
+backend/supabase/.branches/
+supabase/.temp/
+supabase/.branches/
 
 # Editor and OS
 .vscode/

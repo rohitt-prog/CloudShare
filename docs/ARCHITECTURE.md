@@ -14,17 +14,18 @@
 
 | Component / Subsystem | Current Status | Target Implementation Phase |
 |---|:---:|:---:|
-| **Frontend Feature Architecture (`app/`, `features/`, `components/`)** | **Implemented** | Phase 2A |
+| **Frontend Feature Architecture (`frontend/src/app/`, `features/`, `components/`)** | **Implemented** | Phase 2A |
 | **Domain TypeScript Type Contracts (`auth`, `files`, `sharing`)** | **Implemented** | Phase 2A |
 | **Vite & TypeScript Strict Mode Tooling** | **Implemented** | Phase 1 & 2A |
-| **Supabase Configuration (`supabase/config.toml`)** | **Implemented** | Phase 2A |
+| **Supabase Configuration (`backend/supabase/config.toml`)** | **Implemented** | Phase 2A |
 | **Edge Function Type Contracts & Definitions** | **Implemented** | Phase 2A |
 | **Supabase Client SDK (`@supabase/supabase-js`)** | **Implemented** | Phase 2B |
 | **PostgreSQL Database Tables (`profiles`, `files`, `share_links`)** | **Implemented in Migration (Deployment Pending)** | Phase 2B |
 | **Database Triggers (`on_auth_user_created`, `handle_updated_at`)** | **Implemented in Migration (Deployment Pending)** | Phase 2B |
 | **Row Level Security (RLS) Policies** | **Implemented in Migration (Deployment Pending)** | Phase 2B |
 | **Private Supabase Storage Bucket (`user-files`) & Storage RLS** | *Planned (Not Deployed)* | Phase 2B / Phase 5 |
-| **Authentication Flow & Session Management (`features/auth`)** | *Planned* | Phase 4 |
+| **Authentication Flow & Session Management (`features/auth`)** | **Implemented** | Phase 3 |
+| **File Management & Dashboard (`features/files`)** | **Implemented** | Phase 4 |
 | **File Upload & Storage Operations (`features/files`)** | *Planned* | Phase 5 |
 | **Edge Function Runtime Logic (Token validation & Signed URLs)** | *Planned (Not Deployed)* | Phase 6 |
 
@@ -81,51 +82,86 @@ flowchart TD
 
 ## 2. Directory Structure & Responsibilities
 
-The codebase follows a scalable, domain-driven architecture separating infrastructure, cross-cutting concerns, and business features:
+The codebase follows a decoupled architecture separating the frontend client application, root documentation, and Supabase BaaS configurations:
 
 ```text
-CloudShare/
-├── public/                 # Static assets (favicons, public images)
+CloudVault/
+├── .gitignore                      # Multi-tier secret and artifact ignore rules
+├── README.md                       # Project documentation and phase roadmap
+├── package.json                    # Minimal root delegating scripts
 │
-├── src/
-│   ├── app/                # Application initialization, root wrapper, router, and global providers
-│   │   ├── App.tsx         # Root container composing providers and routing
-│   │   ├── router.tsx      # Declarative route dispatcher
-│   │   └── providers/      # Composable application-wide context providers
-│   │
-│   ├── components/         # Shared presentation components (feature-agnostic)
-│   │   ├── ui/             # Atomic UI primitives (Button, Input, Modal, Dropdown)
-│   │   └── layout/         # Structural shell components (Header, Sidebar, Navigation)
-│   │
-│   ├── features/           # Domain-driven feature modules (isolated business verticals)
-│   │   ├── auth/           # Authentication state, login/registration UI, auth hooks & types
-│   │   ├── files/          # File explorer, upload workflows, file management hooks & types
-│   │   └── sharing/        # Link generation, access verification, permission rules & types
-│   │
-│   ├── pages/              # Route-level page components (views assembled from features)
-│   ├── lib/                # External library instances and integrations
-│   ├── utils/              # Pure utility functions (string formatting, byte size calculation, cn)
-│   ├── constants/          # Application-wide constants, limits, and configuration keys
-│   ├── types/              # Cross-domain type exports and global application contracts
-│   ├── App.tsx             # Root entry wrapper component
-│   ├── main.tsx            # Vite DOM entry point
-│   └── index.css           # Global Tailwind CSS directives
+├── backend/
+│   └── supabase/                   # Supabase BaaS infrastructure
+│       ├── config.toml             # Local Supabase development configuration
+│       ├── migrations/             # PostgreSQL schema migrations (DDL, triggers, RLS policies)
+│       └── functions/              # Deno-based Edge Functions for privileged operations
+│           ├── create-share-link/  # Generates cryptographically secure sharing links
+│           └── access-shared-file/ # Validates tokens, checks expirations, issues signed download URLs
 │
-├── supabase/               # Backend-as-a-Service infrastructure
-│   ├── migrations/         # PostgreSQL schema migrations (DDL, triggers, RLS policies)
-│   ├── functions/          # Deno-based Edge Functions for privileged operations
-│   │   ├── create-share-link/  # Generates cryptographically secure sharing links
-│   │   └── access-shared-file/ # Validates tokens, checks expirations, issues signed download URLs
-│   └── config.toml         # Local Supabase development configuration
+├── docs/                           # System design, architecture, and schema documentation
+│   ├── ARCHITECTURE.md             # Architecture specifications and security boundary definitions
+│   └── DATABASE_SCHEMA.md          # Proposed PostgreSQL tables, relationships, and RLS policies
 │
-├── docs/                   # System design, architecture, and schema documentation
-│   ├── ARCHITECTURE.md     # Architecture specifications and security boundary definitions
-│   └── DATABASE_SCHEMA.md  # Proposed PostgreSQL tables, relationships, and RLS policies
-│
-├── .env.example            # Template for required environment variables (Anon key only)
-├── .gitignore              # Multi-tier secret and artifact ignore rules
-└── README.md               # Project documentation and phase roadmap
+└── frontend/                       # Decoupled React + TypeScript + Vite application
+    ├── .env.example                # Template for frontend environment variables (Anon key only)
+    ├── eslint.config.js            # Frontend ESLint configuration
+    ├── index.html                  # Single-page application HTML entry shell
+    ├── package.json                # Frontend package dependencies & scripts
+    ├── package-lock.json           # Frontend dependency lockfile
+    ├── postcss.config.js           # PostCSS configuration
+    ├── tailwind.config.js          # Tailwind CSS configuration
+    ├── tsconfig.json               # Frontend TypeScript project references
+    ├── tsconfig.app.json           # Application TypeScript configuration
+    ├── tsconfig.node.json          # Vite tooling TypeScript configuration
+    ├── vite.config.ts              # Vite configuration with @/ alias
+    │
+    ├── public/                     # Static public assets
+    │   └── favicon.svg             # Application favicon
+    │
+    ├── src/                        # Frontend source code
+    │   ├── app/                    # Application initialization, root wrapper, router, and global providers
+    │   │   ├── App.tsx             # Root container composing providers and routing
+    │   │   ├── router.tsx          # Declarative route dispatcher
+    │   │   ├── router-context.ts   # Navigation context
+    │   │   └── providers/          # Composable application-wide context providers
+    │   ├── components/             # Shared presentation components (feature-agnostic)
+    │   │   ├── ui/                 # Atomic UI primitives (Button, Input)
+    │   │   └── layout/             # Structural shell components (Header)
+    │   ├── constants/              # Application-wide constants, limits, and configuration keys
+    │   ├── features/               # Domain-driven feature modules (isolated business verticals)
+    │   │   ├── auth/               # Authentication state, login/registration UI, auth hooks & types
+    │   │   ├── files/              # File explorer, upload workflows, file management hooks & types
+    │   │   └── sharing/            # Link generation, access verification, permission rules & types
+    │   ├── hooks/                  # Global application hooks
+    │   ├── lib/                    # External library instances and integrations (Supabase client)
+    │   ├── pages/                  # Route-level page components (views assembled from features)
+    │   ├── services/               # Shared service interfaces
+    │   ├── types/                  # Cross-domain type exports and global application contracts
+    │   ├── utils/                  # Pure utility functions (string formatting, byte size calculation, cn)
+    │   ├── App.tsx                 # Root entry wrapper component
+    │   ├── index.css               # Global Tailwind CSS directives
+    │   ├── main.tsx                # Vite DOM entry point
+    │   └── vite-env.d.ts           # Vite client environment typing
+    │
+    └── tests/                      # Frontend unit test suites
+        ├── auth-validation.test.js # Authentication validation tests
+        └── file-management.test.js # File dashboard filtering and isolation tests
 ```
+
+### 2.1 Supabase CLI Invocation
+Backend assets are located in `backend/supabase/`. To execute Supabase CLI commands from the repository root, use the global `--workdir backend` flag:
+
+```bash
+# Start local Supabase development environment
+supabase --workdir backend start
+
+# Run database migrations locally
+supabase --workdir backend db reset
+
+# Deploy or inspect Edge Functions locally
+supabase --workdir backend functions serve
+```
+*(Or navigate directly to the backend directory: `cd backend && supabase <command>`)*
 
 ---
 

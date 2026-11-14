@@ -2,7 +2,7 @@
 
 > [!IMPORTANT]
 > **Implementation & Security Hardening Status:**
-> - **Migration File:** Hardened in place in `supabase/migrations/20261114191500_create_base_schema.sql`.
+> - **Migration File:** Hardened in place in `backend/supabase/migrations/20261114191500_create_base_schema.sql`.
 > - **Column-Level Privilege Hardening:** Active in migration:
 >   - Authenticated users may update only `full_name` on `profiles`. Direct updates to `id`, `email`, `created_at`, or `updated_at` are revoked.
 >   - Authenticated users may update only `revoked_at` on `share_links`. Direct updates to `token_hash`, `file_id`, `owner_id`, `expires_at`, `id`, or `created_at` are revoked.
@@ -125,7 +125,7 @@ Stores time-limited, revocable share link tokens for files.
 
 ## 3. Row Level Security & Column-Level Permissions
 
-All tables have Row Level Security enabled in `supabase/migrations/20261114191500_create_base_schema.sql`.
+All tables have Row Level Security enabled in `backend/supabase/migrations/20261114191500_create_base_schema.sql`.
 
 ### 3.1 `profiles` Security
 - **SELECT:** `auth.uid() = id` (Users can only read their own profile).
