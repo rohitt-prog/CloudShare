@@ -1,5 +1,6 @@
 import React from 'react';
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUp, ArrowDown, List, LayoutGrid } from 'lucide-react';
+import { cn } from '@/utils/cn';
 import type { FileCategory, FileSortOption, FileSortField } from '@/features/files/types';
 
 export interface FileFiltersProps {
@@ -8,6 +9,8 @@ export interface FileFiltersProps {
   categoryCounts: Record<FileCategory, number>;
   sort: FileSortOption;
   onSortChange: (sort: FileSortOption) => void;
+  viewMode?: 'list' | 'grid';
+  onViewModeChange?: (mode: 'list' | 'grid') => void;
 }
 
 const CATEGORIES: { id: FileCategory; label: string }[] = [
@@ -25,6 +28,8 @@ export const FileFilters: React.FC<FileFiltersProps> = ({
   categoryCounts,
   sort,
   onSortChange,
+  viewMode = 'list',
+  onViewModeChange,
 }) => {
   const handleFieldChange = (field: FileSortField) => {
     onSortChange({
@@ -41,9 +46,13 @@ export const FileFilters: React.FC<FileFiltersProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      {/* Category Tabs */}
-      <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between pt-1">
+      {/* Category Filter Toggle Group */}
+      <div
+        role="group"
+        aria-label="Filter files by category"
+        className="flex flex-wrap items-center gap-1.5"
+      >
         {CATEGORIES.map((cat) => {
           const isSelected = selectedCategory === cat.id;
           const count = categoryCounts[cat.id] || 0;
@@ -52,18 +61,23 @@ export const FileFilters: React.FC<FileFiltersProps> = ({
             <button
               key={cat.id}
               type="button"
+              aria-pressed={isSelected}
               onClick={() => onSelectCategory(cat.id)}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 isSelected
-                  ? 'bg-sky-600 text-white shadow-sm'
-                  : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200'
-              }`}
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-card text-muted-foreground hover:bg-accent hover:text-foreground border border-border'
+              )}
             >
               <span>{cat.label}</span>
               <span
-                className={`rounded-full px-1.5 py-0.2 text-[10px] font-semibold ${
-                  isSelected ? 'bg-sky-700 text-white' : 'bg-slate-100 text-slate-500'
-                }`}
+                className={cn(
+                  'rounded-full px-1.5 py-0.2 text-[10px] font-semibold',
+                  isSelected
+                    ? 'bg-primary-foreground/20 text-primary-foreground'
+                    : 'bg-muted text-muted-foreground'
+                )}
               >
                 {count}
               </span>
@@ -72,58 +86,105 @@ export const FileFilters: React.FC<FileFiltersProps> = ({
         })}
       </div>
 
-      {/* Sorting Control */}
-      <div className="flex items-center gap-2 self-end sm:self-auto">
-        <span className="text-xs text-slate-500 hidden md:inline">Sort by:</span>
-        <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm text-xs">
+      {/* Controls Group: Sorting & View Mode Switcher */}
+      <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto shrink-0">
+        {/* Sort Field Selector */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground hidden sm:inline">Sort:</span>
+          <div className="inline-flex rounded-xl border border-border bg-card p-0.5 shadow-sm text-xs">
+            <button
+              type="button"
+              onClick={() => handleFieldChange('date')}
+              className={cn(
+                'rounded-lg px-2.5 py-1 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                sort.field === 'date'
+                  ? 'bg-accent text-accent-foreground font-semibold shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Date
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFieldChange('name')}
+              className={cn(
+                'rounded-lg px-2.5 py-1 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                sort.field === 'name'
+                  ? 'bg-accent text-accent-foreground font-semibold shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Name
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFieldChange('size')}
+              className={cn(
+                'rounded-lg px-2.5 py-1 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                sort.field === 'size'
+                  ? 'bg-accent text-accent-foreground font-semibold shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Size
+            </button>
+          </div>
+
+          {/* Sort Order Toggle */}
           <button
             type="button"
-            onClick={() => handleFieldChange('date')}
-            className={`rounded-md px-2.5 py-1 font-medium transition-colors ${
-              sort.field === 'date'
-                ? 'bg-slate-100 text-slate-900 font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+            onClick={toggleOrder}
+            className="inline-flex items-center justify-center rounded-xl border border-border bg-card p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            title={`Sort order: ${sort.order === 'asc' ? 'Ascending' : 'Descending'}`}
+            aria-label={`Toggle sort order, currently ${sort.order === 'asc' ? 'ascending' : 'descending'}`}
           >
-            Date
-          </button>
-          <button
-            type="button"
-            onClick={() => handleFieldChange('name')}
-            className={`rounded-md px-2.5 py-1 font-medium transition-colors ${
-              sort.field === 'name'
-                ? 'bg-slate-100 text-slate-900 font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Name
-          </button>
-          <button
-            type="button"
-            onClick={() => handleFieldChange('size')}
-            className={`rounded-md px-2.5 py-1 font-medium transition-colors ${
-              sort.field === 'size'
-                ? 'bg-slate-100 text-slate-900 font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Size
+            {sort.order === 'asc' ? (
+              <ArrowUp className="h-4 w-4" />
+            ) : (
+              <ArrowDown className="h-4 w-4" />
+            )}
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={toggleOrder}
-          className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 focus:outline-none"
-          title={`Order: ${sort.order === 'asc' ? 'Ascending' : 'Descending'}`}
-          aria-label="Toggle sort order"
-        >
-          {sort.order === 'asc' ? (
-            <ArrowUp className="h-4 w-4" />
-          ) : (
-            <ArrowDown className="h-4 w-4" />
-          )}
-        </button>
+        {/* View Mode Switcher (List vs Grid) */}
+        {onViewModeChange && (
+          <div
+            role="group"
+            aria-label="View layout switcher"
+            className="inline-flex items-center rounded-xl border border-border bg-card p-0.5 shadow-sm text-xs ml-1"
+          >
+            <button
+              type="button"
+              onClick={() => onViewModeChange('list')}
+              title="List view"
+              aria-label="Switch to list view"
+              aria-pressed={viewMode === 'list'}
+              className={cn(
+                'rounded-lg p-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                viewMode === 'list'
+                  ? 'bg-accent text-accent-foreground font-semibold shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <List className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onViewModeChange('grid')}
+              title="Grid view"
+              aria-label="Switch to grid view"
+              aria-pressed={viewMode === 'grid'}
+              className={cn(
+                'rounded-lg p-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                viewMode === 'grid'
+                  ? 'bg-accent text-accent-foreground font-semibold shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

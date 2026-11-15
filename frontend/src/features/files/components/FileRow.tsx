@@ -1,16 +1,14 @@
 import React from 'react';
 import {
-  FileText,
-  Image as ImageIcon,
-  Film,
-  Archive,
-  File,
-  Info,
   Download,
   Trash2,
   Share2,
+  Info,
+  Loader2,
 } from 'lucide-react';
-import type { FileItem, FileCategory } from '@/features/files/types';
+import { Badge } from '@/components/ui/Badge';
+import { CategoryIcon } from './FileCard';
+import type { FileItem } from '@/features/files/types';
 
 export interface FileRowProps {
   file: FileItem;
@@ -20,31 +18,6 @@ export interface FileRowProps {
   onShare?: (file: FileItem) => void;
   isDownloading?: boolean;
 }
-
-const CategoryIcon: React.FC<{ category: FileCategory }> = ({ category }) => {
-  switch (category) {
-    case 'documents':
-      return <FileText className="h-5 w-5 text-indigo-600" />;
-    case 'images':
-      return <ImageIcon className="h-5 w-5 text-sky-600" />;
-    case 'media':
-      return <Film className="h-5 w-5 text-purple-600" />;
-    case 'archives':
-      return <Archive className="h-5 w-5 text-amber-600" />;
-    case 'other':
-    default:
-      return <File className="h-5 w-5 text-slate-500" />;
-  }
-};
-
-const categoryBadgeStyles: Record<FileCategory, string> = {
-  all: 'bg-slate-100 text-slate-700',
-  documents: 'bg-indigo-50 text-indigo-700 border-indigo-100',
-  images: 'bg-sky-50 text-sky-700 border-sky-100',
-  media: 'bg-purple-50 text-purple-700 border-purple-100',
-  archives: 'bg-amber-50 text-amber-700 border-amber-100',
-  other: 'bg-slate-100 text-slate-600 border-slate-200',
-};
 
 export const FileRow: React.FC<FileRowProps> = ({
   file,
@@ -62,43 +35,53 @@ export const FileRow: React.FC<FileRowProps> = ({
 
   return (
     <div
-      onClick={() => onSelect(file)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onSelect(file);
-        }
-      }}
-      className="group flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-3.5 transition-all hover:border-sky-300 hover:shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
+      role="row"
+      aria-label={`File ${file.fileName}`}
+      className="group flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-3 text-card-foreground transition-all duration-150 hover:bg-accent/40 hover:border-primary/40 motion-reduce:transition-none"
     >
-      <div className="flex items-center gap-3.5 min-w-0 flex-1">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 border border-slate-100 group-hover:bg-sky-50 group-hover:border-sky-100 transition-colors">
-          <CategoryIcon category={file.category} />
+      {/* File Type Icon & Name */}
+      <div
+        onClick={() => onSelect(file)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect(file);
+          }
+        }}
+        className="flex items-center gap-3.5 min-w-0 flex-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg p-0.5"
+      >
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/60 border border-border/50 group-hover:bg-primary/10 transition-colors">
+          <CategoryIcon category={file.category} className="h-5 w-5" />
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-slate-900 group-hover:text-sky-600 transition-colors" title={file.fileName}>
+          <p
+            className="truncate text-sm font-semibold text-foreground group-hover:text-primary transition-colors"
+            title={file.fileName}
+          >
             {file.fileName}
           </p>
-          <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
-            <span className="font-mono text-slate-500">{file.formattedSize}</span>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 sm:hidden">
+            <span className="font-mono">{file.formattedSize}</span>
             <span>&bull;</span>
-            <span>{formattedDate}</span>
+            <span className="truncate">{formattedDate}</span>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
-        <span
-          className={`hidden md:inline-flex capitalize rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${
-            categoryBadgeStyles[file.category]
-          }`}
-        >
+      {/* Desktop & Tablet Metadata Columns */}
+      <div className="hidden sm:flex items-center gap-6 text-xs text-muted-foreground shrink-0">
+        <span className="font-mono w-20 text-right">{file.formattedSize}</span>
+        <span className="hidden md:inline-block w-28 text-right truncate">{formattedDate}</span>
+        <Badge variant="outline" size="sm" className="hidden lg:inline-flex capitalize text-[10px]">
           {file.category}
-        </span>
+        </Badge>
+      </div>
 
+      {/* Action Controls */}
+      <div className="flex items-center gap-1 shrink-0">
         {onShare && (
           <button
             type="button"
@@ -106,7 +89,7 @@ export const FileRow: React.FC<FileRowProps> = ({
               e.stopPropagation();
               onShare(file);
             }}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-sky-50 hover:text-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             title="Share file"
             aria-label={`Share ${file.fileName}`}
           >
@@ -122,11 +105,15 @@ export const FileRow: React.FC<FileRowProps> = ({
               onDownload(file);
             }}
             disabled={isDownloading}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-sky-50 hover:text-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
             title="Download file"
             aria-label={`Download ${file.fileName}`}
           >
-            <Download className="h-4 w-4" />
+            {isDownloading ? (
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
           </button>
         )}
 
@@ -137,7 +124,7 @@ export const FileRow: React.FC<FileRowProps> = ({
               e.stopPropagation();
               onDelete(file);
             }}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             title="Delete file"
             aria-label={`Delete ${file.fileName}`}
           >
@@ -151,7 +138,7 @@ export const FileRow: React.FC<FileRowProps> = ({
             e.stopPropagation();
             onSelect(file);
           }}
-          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-400"
+          className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           title="Inspect file metadata"
           aria-label={`Inspect metadata for ${file.fileName}`}
         >

@@ -2,9 +2,12 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { HomePage } from '@/pages/HomePage';
+import { DashboardPage } from '@/pages/DashboardPage';
+import { SettingsPage } from '@/pages/SettingsPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { SharedFilePage } from '@/pages/SharedFilePage';
+import { AppShell } from '@/components/layout/AppShell';
 import {
   RouterContext,
   type AppRoute,
@@ -116,12 +119,12 @@ export const AppRouter: React.FC<RouterProps> = ({
   if (isLoading) {
     return (
       <div
-        className="flex min-h-[calc(100vh-140px)] flex-col items-center justify-center space-y-3"
+        className="flex min-h-screen flex-col items-center justify-center space-y-3 bg-background text-foreground"
         role="status"
         aria-live="polite"
       >
-        <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
-        <p className="text-xs font-medium text-slate-500">Checking authentication session...</p>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-xs font-medium text-muted-foreground">Checking authentication session...</p>
       </div>
     );
   }
@@ -158,9 +161,28 @@ export const AppRouter: React.FC<RouterProps> = ({
       break;
 
     case 'dashboard':
+      pageContent = (
+        <AppShell>
+          <DashboardPage />
+        </AppShell>
+      );
+      break;
+
+    case 'settings':
+      pageContent = (
+        <AppShell>
+          <SettingsPage />
+        </AppShell>
+      );
+      break;
+
     case 'home':
     default:
-      pageContent = <HomePage />;
+      pageContent = (
+        <AppShell>
+          <HomePage />
+        </AppShell>
+      );
       break;
   }
 

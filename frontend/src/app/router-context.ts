@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 
-export type AppRoute = 'home' | 'login' | 'register' | 'dashboard' | 'share';
+export type AppRoute = 'home' | 'login' | 'register' | 'dashboard' | 'settings' | 'share';
 
 export interface NavigateOptions {
   shareToken?: string | null;

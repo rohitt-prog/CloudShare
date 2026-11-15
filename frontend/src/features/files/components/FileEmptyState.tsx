@@ -16,26 +16,26 @@ export const FileEmptyState: React.FC<FileEmptyStateProps> = ({
   onUploadClick,
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white/60 p-12 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 mb-4">
+    <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card/50 p-12 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground mb-4 shadow-xs">
         {isFiltered ? (
-          <FileQuestion className="h-7 w-7 text-slate-500" />
+          <FileQuestion className="h-7 w-7 text-muted-foreground" />
         ) : (
-          <FolderOpen className="h-7 w-7 text-slate-500" />
+          <FolderOpen className="h-7 w-7 text-primary" />
         )}
       </div>
 
-      <h3 className="text-base font-semibold text-slate-900 mb-1">
-        {isFiltered ? 'No files match your search' : 'Your vault is empty'}
+      <h3 className="text-base font-semibold text-foreground mb-1">
+        {isFiltered ? 'No matching files found' : 'Your vault is empty'}
       </h3>
 
-      <p className="max-w-sm text-xs text-slate-500 mb-6 leading-relaxed">
+      <p className="max-w-sm text-xs text-muted-foreground mb-6 leading-relaxed">
         {isFiltered
           ? 'Try adjusting your search keywords or switching category filters to find what you are looking for.'
-          : 'No files have been uploaded to your private vault yet. Select or drop a file above to upload.'}
+          : 'No files have been uploaded to your private vault yet. Select or drop a file above to begin.'}
       </p>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-2">
         {isFiltered && onResetFilters && (
           <Button variant="outline" size="sm" onClick={onResetFilters}>
             Reset filters

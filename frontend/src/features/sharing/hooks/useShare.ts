@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { FileItem } from '@/features/files/types';
 import {
   type ShareLinkItem,
@@ -25,6 +25,16 @@ export function useShare({ file, isOpen }: UseShareOptions) {
   const [selectedHours, setSelectedHours] = useState<number>(EXPIRATION_OPTIONS[1].hours); // Default 24h
   const [newlyCreatedLink, setNewlyCreatedLink] = useState<CreateShareLinkSuccess | null>(null);
   const [isCopied, setIsCopied] = useState<boolean>(false);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clean up any pending copy timer on unmount
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) {
+        clearTimeout(copyTimerRef.current);
+      }
+    };
+  }, []);
 
   // Load existing links when modal opens for a file
   const fetchLinks = useCallback(async () => {
@@ -66,6 +76,7 @@ export function useShare({ file, isOpen }: UseShareOptions) {
 
     setIsCreating(true);
     setCreateError(null);
+    setNewlyCreatedLink(null); // Clear previous link when new attempt begins
 
     const result = await shareService.createShareLink({
       fileId: file.id,
@@ -80,6 +91,7 @@ export function useShare({ file, isOpen }: UseShareOptions) {
       void fetchLinks();
       return true;
     } else {
+      setNewlyCreatedLink(null); // Clear when creation attempt fails
       setCreateError(result.error);
       return false;
     }
@@ -94,6 +106,9 @@ export function useShare({ file, isOpen }: UseShareOptions) {
     setRevokingId(null);
 
     if (result.success) {
+      // Clear newly created link banner if it matches the revoked link ID
+      setNewlyCreatedLink((current) => (current?.shareId === linkId ? null : current));
+
       // Optimistically update link status or re-fetch
       setLinks((prev) =>
         prev.map((item) =>
@@ -110,16 +125,25 @@ export function useShare({ file, isOpen }: UseShareOptions) {
   }, []);
 
   // Copy share URL to clipboard
-  const copyToClipboard = useCallback(async (text: string) => {
-    try {
-      if (typeof navigator !== 'undefined' && navigator.clipboard) {
-        await navigator.clipboard.writeText(text);
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2500);
-      }
-    } catch {
-      // Fallback for older environments
+  const copyToClipboard = useCallback(async (text: string): Promise<boolean> => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) {
       setIsCopied(false);
+      throw new Error('Clipboard access is not supported in this environment.');
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setIsCopied(true);
+      if (copyTimerRef.current) {
+        clearTimeout(copyTimerRef.current);
+      }
+      copyTimerRef.current = setTimeout(() => {
+        setIsCopied(false);
+      }, 2500);
+      return true;
+    } catch (err) {
+      setIsCopied(false);
+      throw err instanceof Error ? err : new Error('Failed to copy to clipboard.');
     }
   }, []);
 

@@ -50,32 +50,32 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="delete-dialog-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-150"
       onClick={() => {
         if (!isDeleting) onCancel();
       }}
     >
       <div
         ref={dialogRef}
-        className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl space-y-4"
+        className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-xl space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
             <AlertTriangle className="h-5 w-5" />
           </div>
           <div className="space-y-1">
-            <h3 id="delete-dialog-title" className="text-base font-bold text-slate-900">
+            <h3 id="delete-dialog-title" className="text-base font-bold text-foreground">
               Delete File
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               Are you sure you want to permanently delete{' '}
-              <strong className="text-slate-800 break-all">{file.fileName}</strong>?
+              <strong className="text-foreground break-all">{file.fileName}</strong>?
             </p>
           </div>
         </div>
 
-        <div className="rounded-xl border border-rose-100 bg-rose-50/70 p-3 text-xs text-rose-800">
+        <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive">
           This operation will permanently remove the file from both PostgreSQL metadata and private storage. This action cannot be undone.
         </div>
 
@@ -86,6 +86,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
             size="sm"
             onClick={onCancel}
             disabled={isDeleting}
+            className="border-input hover:bg-accent hover:text-accent-foreground"
           >
             Cancel
           </Button>
@@ -94,7 +95,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
             size="sm"
             onClick={() => void onConfirm()}
             disabled={isDeleting}
-            className="bg-rose-600 hover:bg-rose-700 focus:ring-rose-500 gap-1.5"
+            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground focus:ring-destructive gap-1.5"
           >
             {isDeleting ? (
               <>
