@@ -187,7 +187,7 @@ const ToastCard: React.FC<ToastCardProps> = ({ item, onDismiss }) => {
       <button
         type="button"
         onClick={() => onDismiss(item.id)}
-        className="text-muted-foreground hover:text-foreground rounded-lg p-1 transition-colors focus-visible:ring-1 focus-visible:ring-ring"
+        className="text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 rounded-lg p-1 focus-visible:ring-1 focus-visible:ring-ring"
         aria-label="Dismiss notification"
       >
         <X className="h-4 w-4" />

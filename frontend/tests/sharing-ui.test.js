@@ -613,3 +613,45 @@ test('[STATIC SOURCE] ShareModal maintains 30-second relative expiration interva
   assert.ok(src.includes('setInterval(') && src.includes('30000)'), 'Interval must tick every 30,000ms');
   assert.ok(src.includes('clearInterval('), 'Interval must be cleared on close/unmount');
 });
+
+// =============================================================================
+// Phase 10A Tests: Revoke Interaction Refinement & Motion Polish
+// =============================================================================
+
+test('[STATIC SOURCE] ShareModal Revoke button enforces destructive styling, hover feedback, active state, and accessibility', () => {
+  const src = readSrc('src/features/sharing/components/ShareModal.tsx');
+  const btnSrc = readSrc('src/components/ui/Button.tsx');
+
+  // Revoke button uses destructive variant with icon and aria-label
+  assert.ok(src.includes('variant="destructive"'), 'Revoke button must declare variant="destructive"');
+  assert.ok(src.includes('aria-label={`Revoke share link created on'), 'Revoke button must provide accessible aria-label');
+  assert.ok(src.includes('<Ban'), 'Revoke button must render Ban icon');
+
+  // Destructive Button variant provides comprehensive states in Button.tsx
+  assert.ok(btnSrc.includes('text-rose-600') && btnSrc.includes('dark:text-rose-400'), 'Must provide readable red text in light & dark');
+  assert.ok(btnSrc.includes('hover:bg-rose-50') && btnSrc.includes('dark:hover:bg-rose-950'), 'Must provide red-tinted hover background');
+  assert.ok(btnSrc.includes('hover:border-rose-500'), 'Must provide visible hover border');
+  assert.ok(btnSrc.includes('hover:shadow-xs'), 'Must provide subtle red shadow on hover');
+  assert.ok(btnSrc.includes('active:scale-[0.98]'), 'Must provide active pressed scale');
+  assert.ok(btnSrc.includes('focus-visible:ring-rose-500'), 'Must provide visible red focus-visible ring');
+  assert.ok(btnSrc.includes('transition-all duration-150'), 'Must provide smooth transition');
+
+  // Confirm Revoke button in confirmation panel
+  assert.ok(src.includes('bg-rose-600'), 'Confirm Revoke must use solid high-contrast red');
+  assert.ok(src.includes('aria-label="Confirm revocation of share link"'), 'Confirm Revoke must provide accessible label');
+});
+
+test('[STATIC SOURCE] Modal and ShareModal enforce subtle motion and respect prefers-reduced-motion', () => {
+  const modalSrc = readSrc('src/components/ui/Modal.tsx');
+  const shareModalSrc = readSrc('src/features/sharing/components/ShareModal.tsx');
+
+  // Modal animations and reduced motion
+  assert.ok(modalSrc.includes('animate-fadeIn'), 'Modal backdrop must use animate-fadeIn');
+  assert.ok(modalSrc.includes('animate-scaleIn'), 'Modal dialog must use animate-scaleIn');
+  assert.ok(modalSrc.includes('motion-reduce:animate-none'), 'Modal must respect prefers-reduced-motion');
+
+  // ShareModal animations and reduced motion
+  assert.ok(shareModalSrc.includes('animate-fadeIn'), 'ShareModal panels must use animate-fadeIn');
+  assert.ok(shareModalSrc.includes('motion-reduce:animate-none'), 'ShareModal must respect prefers-reduced-motion');
+  assert.ok(shareModalSrc.includes('motion-reduce:active:scale-100'), 'Radio options must respect reduced motion on press');
+});

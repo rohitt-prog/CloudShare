@@ -108,7 +108,7 @@ export const FileDetails: React.FC<FileDetailsProps> = ({
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground hover:scale-105 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Close details"
           >
             <X className="h-5 w-5" />

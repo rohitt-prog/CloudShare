@@ -158,7 +158,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
               type="button"
               onClick={onClose}
               aria-label="Close navigation drawer"
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+              className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 focus-visible:ring-2 focus-visible:ring-ring"
             >
               <X className="h-5 w-5" />
             </button>
@@ -219,7 +219,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
             <button
               type="button"
               onClick={handleSignOut}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 active:scale-[0.98] motion-reduce:active:scale-100 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-ring"
             >
               <LogOut className="h-4 w-4" />
               <span>Sign out</span>

@@ -89,7 +89,7 @@ export const FileRow: React.FC<FileRowProps> = ({
               e.stopPropagation();
               onShare(file);
             }}
-            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground hover:scale-110 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             title="Share file"
             aria-label={`Share ${file.fileName}`}
           >
@@ -105,7 +105,7 @@ export const FileRow: React.FC<FileRowProps> = ({
               onDownload(file);
             }}
             disabled={isDownloading}
-            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground hover:scale-110 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:hover:scale-100 disabled:active:scale-100 disabled:pointer-events-none"
             title="Download file"
             aria-label={`Download ${file.fileName}`}
           >
@@ -124,7 +124,7 @@ export const FileRow: React.FC<FileRowProps> = ({
               e.stopPropagation();
               onDelete(file);
             }}
-            className="rounded-lg p-1.5 text-muted-foreground hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 hover:scale-110 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             title="Delete file"
             aria-label={`Delete ${file.fileName}`}
           >
@@ -138,7 +138,7 @@ export const FileRow: React.FC<FileRowProps> = ({
             e.stopPropagation();
             onSelect(file);
           }}
-          className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground hover:scale-110 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           title="Inspect file metadata"
           aria-label={`Inspect metadata for ${file.fileName}`}
         >

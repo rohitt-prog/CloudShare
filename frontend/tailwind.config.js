@@ -68,11 +68,16 @@ export default {
           from: { transform: 'translateX(-100%)' },
           to: { transform: 'translateX(0)' },
         },
+        scaleIn: {
+          from: { transform: 'scale(0.97)', opacity: '0' },
+          to: { transform: 'scale(1)', opacity: '1' },
+        },
       },
       animation: {
         fadeIn: 'fadeIn 150ms ease-out',
         slideInUp: 'slideInUp 200ms ease-out',
         slideInLeft: 'slideInLeft 200ms ease-out',
+        scaleIn: 'scaleIn 150ms ease-out',
       },
     },
   },

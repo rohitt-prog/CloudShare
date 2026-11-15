@@ -29,7 +29,7 @@ export const NavigationItem: React.FC<NavigationItemProps> = ({
         aria-current={isActive ? 'page' : undefined}
         onClick={onClick}
         className={cn(
-          'flex h-10 w-10 items-center justify-center rounded-xl mx-auto transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+          'flex h-10 w-10 items-center justify-center rounded-xl mx-auto transition-all duration-150 active:scale-[0.98] motion-reduce:active:scale-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
           isActive
             ? 'bg-primary/15 text-primary dark:bg-primary/25 font-semibold'
             : 'text-muted-foreground hover:bg-accent hover:text-foreground'
@@ -47,7 +47,7 @@ export const NavigationItem: React.FC<NavigationItemProps> = ({
       aria-current={isActive ? 'page' : undefined}
       onClick={onClick}
       className={cn(
-        'group flex w-full items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none text-left',
+        'group flex w-full items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 active:scale-[0.99] motion-reduce:active:scale-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none text-left',
         isActive
           ? 'bg-primary/10 text-primary font-semibold dark:bg-primary/20'
           : 'text-muted-foreground hover:bg-accent hover:text-foreground'

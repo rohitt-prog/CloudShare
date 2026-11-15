@@ -48,9 +48,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onNavigateToRegister, onSu
       {authError && (
         <div
           role="alert"
-          className="flex items-start gap-2.5 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800"
+          className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive animate-fadeIn motion-reduce:animate-none"
         >
-          <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 mt-0.5" />
+          <AlertCircle className="h-4 w-4 shrink-0 text-destructive mt-0.5" />
           <span className="leading-relaxed">{authError}</span>
         </div>
       )}
@@ -91,7 +91,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onNavigateToRegister, onSu
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="text-slate-400 hover:text-slate-600 focus:outline-none"
+            className="rounded p-1 text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -116,12 +116,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onNavigateToRegister, onSu
       </Button>
 
       {onNavigateToRegister && (
-        <p className="text-center text-xs text-slate-500 pt-2">
+        <p className="text-center text-xs text-muted-foreground pt-2">
           Don&apos;t have an account?{' '}
           <button
             type="button"
             onClick={onNavigateToRegister}
-            className="font-semibold text-sky-600 hover:text-sky-700 hover:underline focus:outline-none"
+            className="font-semibold text-primary hover:text-primary/80 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded px-1 transition-colors"
           >
             Create an account
           </button>

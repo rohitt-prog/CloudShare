@@ -29,7 +29,7 @@ export const FileSearch: React.FC<FileSearchProps> = ({
         <button
           type="button"
           onClick={() => onChange('')}
-          className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg m-1"
+          className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg m-1"
           aria-label="Clear search query"
         >
           <X className="h-4 w-4" />

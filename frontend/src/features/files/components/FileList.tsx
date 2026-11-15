@@ -121,7 +121,7 @@ export const FileList: React.FC = () => {
           <button
             type="button"
             onClick={clearOperationErrors}
-            className="text-destructive/70 hover:text-destructive transition-colors"
+            className="text-destructive/70 hover:text-destructive hover:scale-110 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100"
             aria-label="Dismiss error"
           >
             <X className="h-3.5 w-3.5" />
@@ -142,7 +142,7 @@ export const FileList: React.FC = () => {
           <button
             type="button"
             onClick={clearOperationErrors}
-            className="text-destructive/70 hover:text-destructive transition-colors"
+            className="text-destructive/70 hover:text-destructive hover:scale-110 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100"
             aria-label="Dismiss error"
           >
             <X className="h-3.5 w-3.5" />
@@ -163,7 +163,7 @@ export const FileList: React.FC = () => {
           <button
             type="button"
             onClick={clearOperationErrors}
-            className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 transition-colors"
+            className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 hover:scale-110 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100"
             aria-label="Dismiss warning"
           >
             <X className="h-3.5 w-3.5" />

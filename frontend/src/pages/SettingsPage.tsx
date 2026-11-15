@@ -202,11 +202,11 @@ export const SettingsPage: React.FC = () => {
                       aria-pressed={isSelected}
                       onClick={() => setTheme(opt.value)}
                       className={cn(
-                        'flex flex-col items-start p-4 rounded-xl border text-left transition-all duration-150 relative select-none',
+                        'flex flex-col items-start p-4 rounded-xl border text-left transition-all duration-150 active:scale-[0.99] motion-reduce:active:scale-100 relative select-none',
                         'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                         isSelected
                           ? 'border-primary bg-primary/5 text-foreground ring-1 ring-primary/30 shadow-xs'
-                          : 'border-border bg-card text-muted-foreground hover:bg-accent/40 hover:text-foreground'
+                          : 'border-border bg-card text-muted-foreground hover:bg-accent/40 hover:text-foreground hover:scale-[1.015] hover:-translate-y-px motion-reduce:hover:scale-100 motion-reduce:hover:translate-y-0'
                       )}
                     >
                       <div className="flex items-center justify-between w-full mb-3">
@@ -258,7 +258,7 @@ export const SettingsPage: React.FC = () => {
                     aria-pressed={viewMode === 'list'}
                     onClick={() => handleViewModeChange('list')}
                     className={cn(
-                      'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                      'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 active:scale-95 motion-reduce:active:scale-100',
                       'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                       viewMode === 'list'
                         ? 'bg-card text-foreground shadow-xs'
@@ -273,7 +273,7 @@ export const SettingsPage: React.FC = () => {
                     aria-pressed={viewMode === 'grid'}
                     onClick={() => handleViewModeChange('grid')}
                     className={cn(
-                      'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                      'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 active:scale-95 motion-reduce:active:scale-100',
                       'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                       viewMode === 'grid'
                         ? 'bg-card text-foreground shadow-xs'

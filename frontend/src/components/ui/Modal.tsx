@@ -121,7 +121,7 @@ export const Modal: React.FC<ModalProps> = ({
         ref={dialogRef}
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          'relative w-full rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-2xl transition-all animate-slideInUp motion-reduce:animate-none',
+          'relative w-full rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-2xl transition-all animate-scaleIn motion-reduce:animate-none',
           modalSizes[size],
           className
         )}
@@ -151,7 +151,7 @@ export const Modal: React.FC<ModalProps> = ({
                 type="button"
                 onClick={onClose}
                 aria-label="Close dialog"
-                className="shrink-0 rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                className="shrink-0 rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <X className="h-5 w-5" />
               </button>

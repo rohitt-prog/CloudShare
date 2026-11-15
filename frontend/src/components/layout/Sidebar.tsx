@@ -88,7 +88,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           className={cn(
-            'flex items-center rounded-xl p-2 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none w-full',
+            'flex items-center rounded-xl p-2 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.98] motion-reduce:active:scale-100 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none w-full',
             isCollapsed ? 'justify-center' : 'justify-between px-3'
           )}
         >

@@ -83,7 +83,7 @@ export const Header: React.FC<HeaderProps> = ({
           aria-expanded={isMobileNavOpen}
           aria-controls="mobile-navigation-drawer"
           aria-label={isMobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'}
-          className="md:hidden -ml-1 mr-1 rounded-xl p-2 text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none transition-colors"
+          className="md:hidden -ml-1 mr-1 rounded-xl p-2 text-muted-foreground hover:bg-accent hover:text-foreground hover:scale-105 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -111,7 +111,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Theme Selector Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground transition-colors border border-border/50"
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground hover:scale-105 active:scale-95 hover:border-border transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 border border-border/50"
             aria-label={`Theme selector, current theme is ${theme}`}
           >
             {theme === 'light' ? (
@@ -172,7 +172,7 @@ export const Header: React.FC<HeaderProps> = ({
         {isAuthenticated && user && (
           <DropdownMenu>
             <DropdownMenuTrigger
-              className="flex items-center gap-2 rounded-xl p-1 pr-2 hover:bg-accent transition-colors border border-border/50"
+              className="flex items-center gap-2 rounded-xl p-1 pr-2 hover:bg-accent hover:scale-[1.015] active:scale-[0.98] hover:border-border transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 border border-border/50"
               aria-label={`User account menu for ${user.fullName || user.email}`}
             >
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary font-semibold text-xs border border-primary/20">

@@ -171,7 +171,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           <button
             type="button"
             onClick={() => setValidationError(null)}
-            className="text-destructive/80 hover:text-destructive p-0.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="text-destructive/80 hover:text-destructive hover:scale-110 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 p-0.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Dismiss validation error"
           >
             <X className="h-3.5 w-3.5" />
@@ -196,7 +196,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           <button
             type="button"
             onClick={onClearError}
-            className="text-destructive/80 hover:text-destructive p-0.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="text-destructive/80 hover:text-destructive hover:scale-110 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 p-0.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Dismiss upload error"
           >
             <X className="h-3.5 w-3.5" />

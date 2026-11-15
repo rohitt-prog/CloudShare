@@ -64,10 +64,10 @@ export const FileFilters: React.FC<FileFiltersProps> = ({
               aria-pressed={isSelected}
               onClick={() => onSelectCategory(cat.id)}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 active:scale-[0.98] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 isSelected
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'bg-card text-muted-foreground hover:bg-accent hover:text-foreground border border-border'
+                  ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20'
+                  : 'bg-card text-muted-foreground hover:bg-accent hover:text-foreground hover:scale-[1.015] hover:-translate-y-px motion-reduce:hover:scale-100 motion-reduce:hover:translate-y-0 border border-border'
               )}
             >
               <span>{cat.label}</span>
@@ -96,7 +96,7 @@ export const FileFilters: React.FC<FileFiltersProps> = ({
               type="button"
               onClick={() => handleFieldChange('date')}
               className={cn(
-                'rounded-lg px-2.5 py-1 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'rounded-lg px-2.5 py-1 font-medium transition-all duration-150 active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 sort.field === 'date'
                   ? 'bg-accent text-accent-foreground font-semibold shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
@@ -108,7 +108,7 @@ export const FileFilters: React.FC<FileFiltersProps> = ({
               type="button"
               onClick={() => handleFieldChange('name')}
               className={cn(
-                'rounded-lg px-2.5 py-1 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'rounded-lg px-2.5 py-1 font-medium transition-all duration-150 active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 sort.field === 'name'
                   ? 'bg-accent text-accent-foreground font-semibold shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
@@ -120,7 +120,7 @@ export const FileFilters: React.FC<FileFiltersProps> = ({
               type="button"
               onClick={() => handleFieldChange('size')}
               className={cn(
-                'rounded-lg px-2.5 py-1 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'rounded-lg px-2.5 py-1 font-medium transition-all duration-150 active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 sort.field === 'size'
                   ? 'bg-accent text-accent-foreground font-semibold shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
@@ -134,7 +134,7 @@ export const FileFilters: React.FC<FileFiltersProps> = ({
           <button
             type="button"
             onClick={toggleOrder}
-            className="inline-flex items-center justify-center rounded-xl border border-border bg-card p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex items-center justify-center rounded-xl border border-border bg-card p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground hover:scale-105 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             title={`Sort order: ${sort.order === 'asc' ? 'Ascending' : 'Descending'}`}
             aria-label={`Toggle sort order, currently ${sort.order === 'asc' ? 'ascending' : 'descending'}`}
           >
@@ -160,7 +160,7 @@ export const FileFilters: React.FC<FileFiltersProps> = ({
               aria-label="Switch to list view"
               aria-pressed={viewMode === 'list'}
               className={cn(
-                'rounded-lg p-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'rounded-lg p-1.5 transition-all duration-150 active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 viewMode === 'list'
                   ? 'bg-accent text-accent-foreground font-semibold shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
@@ -175,7 +175,7 @@ export const FileFilters: React.FC<FileFiltersProps> = ({
               aria-label="Switch to grid view"
               aria-pressed={viewMode === 'grid'}
               className={cn(
-                'rounded-lg p-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'rounded-lg p-1.5 transition-all duration-150 active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 viewMode === 'grid'
                   ? 'bg-accent text-accent-foreground font-semibold shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'

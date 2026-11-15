@@ -68,13 +68,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onNavigateToLogin, o
 
   if (confirmationNotice) {
     return (
-      <div className="space-y-4 py-2">
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
+      <div className="space-y-4 py-2 animate-fadeIn motion-reduce:animate-none">
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-950 dark:text-emerald-200">
           <div className="flex items-start gap-3">
-            <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 mt-0.5" />
+            <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
             <div className="space-y-1">
-              <h4 className="text-sm font-semibold">Check your email</h4>
-              <p className="text-xs text-emerald-700 leading-relaxed">
+              <h4 className="text-sm font-semibold text-emerald-950 dark:text-emerald-100">Check your email</h4>
+              <p className="text-xs text-emerald-800 dark:text-emerald-300/90 leading-relaxed">
                 {confirmationNotice}
               </p>
             </div>
@@ -100,9 +100,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onNavigateToLogin, o
       {authError && (
         <div
           role="alert"
-          className="flex items-start gap-2.5 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800"
+          className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive animate-fadeIn motion-reduce:animate-none"
         >
-          <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 mt-0.5" />
+          <AlertCircle className="h-4 w-4 shrink-0 text-destructive mt-0.5" />
           <span className="leading-relaxed">{authError}</span>
         </div>
       )}
@@ -154,7 +154,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onNavigateToLogin, o
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="text-slate-400 hover:text-slate-600 focus:outline-none"
+            className="rounded p-1 text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -196,12 +196,12 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onNavigateToLogin, o
       </Button>
 
       {onNavigateToLogin && (
-        <p className="text-center text-xs text-slate-500 pt-2">
+        <p className="text-center text-xs text-muted-foreground pt-2">
           Already have an account?{' '}
           <button
             type="button"
             onClick={onNavigateToLogin}
-            className="font-semibold text-sky-600 hover:text-sky-700 hover:underline focus:outline-none"
+            className="font-semibold text-primary hover:text-primary/80 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded px-1 transition-colors"
           >
             Sign in
           </button>

@@ -212,7 +212,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ file, isOpen, onClose })
         {(createError || revokeError || listError) && (
           <div
             role="alert"
-            className="flex items-start justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs text-destructive animate-in fade-in duration-150"
+            className="flex items-start justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs text-destructive animate-fadeIn motion-reduce:animate-none"
           >
             <div className="flex items-start gap-2 min-w-0">
               <AlertCircle className="h-4 w-4 shrink-0 text-destructive mt-0.5" />
@@ -234,7 +234,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ file, isOpen, onClose })
 
         {/* Newly Created Link Notification */}
         {newlyCreatedLink && (
-          <Card className="border-emerald-500/30 bg-emerald-500/10 p-4 space-y-3 animate-in fade-in duration-200">
+          <Card className="border-emerald-500/30 bg-emerald-500/10 p-4 space-y-3 animate-fadeIn motion-reduce:animate-none">
             <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
               <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>Share link generated successfully!</span>
@@ -313,10 +313,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({ file, isOpen, onClose })
                   tabIndex={isSelected ? 0 : -1}
                   onClick={() => setSelectedHours(option.hours)}
                   className={cn(
-                    'flex flex-col items-start p-3 rounded-xl border text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                    'flex flex-col items-start p-3 rounded-xl border text-left transition-all duration-150 active:scale-[0.99] motion-reduce:active:scale-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                     isSelected
                       ? 'border-primary bg-primary/10 text-foreground ring-1 ring-primary shadow-xs'
-                      : 'border-border bg-card text-foreground hover:bg-muted/50 hover:border-muted-foreground/30'
+                      : 'border-border bg-card text-foreground hover:bg-muted/50 hover:border-primary/40 hover:scale-[1.01] hover:-translate-y-px motion-reduce:hover:scale-100 motion-reduce:hover:translate-y-0'
                   )}
                 >
                   <div className="flex items-center justify-between w-full">
@@ -447,14 +447,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({ file, isOpen, onClose })
                       {link.status === 'active' && !isConfirmingRevoke && (
                         <Button
                           type="button"
-                          variant="outline"
+                          variant="destructive"
                           size="sm"
                           onClick={() => setConfirmRevokeId(link.id)}
                           disabled={revokingId === link.id}
-                          className="gap-1 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30 text-xs shrink-0"
+                          className="gap-1.5 text-xs shrink-0 font-medium h-8 px-2.5 shadow-xs"
                           aria-label={`Revoke share link created on ${createdDisplay}`}
                         >
-                          <Ban className="h-3 w-3" />
+                          <Ban className="h-3.5 w-3.5" />
                           <span>Revoke</span>
                         </Button>
                       )}
@@ -465,7 +465,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ file, isOpen, onClose })
                       <div
                         role="region"
                         aria-label="Revocation confirmation"
-                        className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 space-y-2.5 animate-in fade-in duration-150"
+                        className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 space-y-2.5 animate-fadeIn motion-reduce:animate-none"
                       >
                         <div className="flex items-start gap-2">
                           <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
@@ -488,7 +488,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ file, isOpen, onClose })
                             size="sm"
                             onClick={() => setConfirmRevokeId(null)}
                             disabled={revokingId === link.id}
-                            className="text-xs h-7 px-2.5"
+                            className="text-xs h-8 px-2.5"
                             aria-label="Cancel revocation"
                           >
                             Cancel
@@ -499,17 +499,17 @@ export const ShareModal: React.FC<ShareModalProps> = ({ file, isOpen, onClose })
                             size="sm"
                             onClick={() => void handleConfirmRevoke(link.id)}
                             disabled={revokingId === link.id}
-                            className="text-xs h-7 px-2.5 bg-destructive hover:bg-destructive/90 text-destructive-foreground focus:ring-destructive gap-1"
+                            className="text-xs h-8 px-3 bg-rose-600 hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-500 text-white shadow-xs hover:shadow-rose-500/20 focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98] motion-reduce:active:scale-100 transition-all duration-150 gap-1.5"
                             aria-label="Confirm revocation of share link"
                           >
                             {revokingId === link.id ? (
                               <>
-                                <Loader2 className="h-3 w-3 animate-spin" />
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                 <span>Revoking...</span>
                               </>
                             ) : (
                               <>
-                                <Ban className="h-3 w-3" />
+                                <Ban className="h-3.5 w-3.5" />
                                 <span>Confirm Revoke</span>
                               </>
                             )}

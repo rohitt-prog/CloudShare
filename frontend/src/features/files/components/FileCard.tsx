@@ -98,7 +98,7 @@ export const FileCard: React.FC<FileCardProps> = ({
         <button
           type="button"
           onClick={() => onSelect(file)}
-          className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded px-1"
+          className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded px-1"
           aria-label={`View details for ${file.fileName}`}
         >
           <Info className="h-3.5 w-3.5" />
@@ -110,7 +110,7 @@ export const FileCard: React.FC<FileCardProps> = ({
             <button
               type="button"
               onClick={() => onShare(file)}
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground hover:scale-110 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               title="Share file"
               aria-label={`Share ${file.fileName}`}
             >
@@ -123,7 +123,7 @@ export const FileCard: React.FC<FileCardProps> = ({
               type="button"
               onClick={() => onDownload(file)}
               disabled={isDownloading}
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-50"
+              className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground hover:scale-110 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-50 disabled:hover:scale-100 disabled:active:scale-100 disabled:pointer-events-none"
               title="Download file"
               aria-label={`Download ${file.fileName}`}
             >
@@ -139,7 +139,7 @@ export const FileCard: React.FC<FileCardProps> = ({
             <button
               type="button"
               onClick={() => onDelete(file)}
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="rounded-lg p-1.5 text-muted-foreground hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 hover:scale-110 active:scale-95 transition-all duration-150 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               title="Delete file"
               aria-label={`Delete ${file.fileName}`}
             >
